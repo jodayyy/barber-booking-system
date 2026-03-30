@@ -1,1 +1,1 @@
-# barber-booking-system
+# Barber Booking System
