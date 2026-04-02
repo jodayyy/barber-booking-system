@@ -31,7 +31,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  const allowed = ['start_time', 'end_time', 'slot_interval', 'booking_window']
+  const allowed = ['slot_interval', 'booking_window']
   const updates = body as Record<string, unknown>
 
   for (const key of Object.keys(updates)) {
@@ -43,14 +43,6 @@ export async function PUT(request: NextRequest) {
     }
   }
 
-  const timeRe = /^\d{2}:\d{2}$/
-  if (updates.start_time !== undefined && !timeRe.test(updates.start_time as string)) {
-    return NextResponse.json({ error: 'Invalid start_time format' }, { status: 400 })
-  }
-  if (updates.end_time !== undefined && !timeRe.test(updates.end_time as string)) {
-    return NextResponse.json({ error: 'Invalid end_time format' }, { status: 400 })
-  }
-
   const interval = updates.slot_interval !== undefined ? parseInt(updates.slot_interval as string, 10) : NaN
   if (updates.slot_interval !== undefined && (isNaN(interval) || interval < 5 || interval > 120)) {
     return NextResponse.json({ error: 'slot_interval must be between 5 and 120' }, { status: 400 })
@@ -59,13 +51,6 @@ export async function PUT(request: NextRequest) {
   const bookingWindowDays = updates.booking_window !== undefined ? parseInt(updates.booking_window as string, 10) : NaN
   if (updates.booking_window !== undefined && (isNaN(bookingWindowDays) || bookingWindowDays < 1 || bookingWindowDays > 60)) {
     return NextResponse.json({ error: 'booking_window must be between 1 and 60' }, { status: 400 })
-  }
-
-  // Validate start < end when both are present or one is being updated
-  const startTime = (updates.start_time ?? '00:00') as string
-  const endTime = (updates.end_time ?? '23:59') as string
-  if (updates.start_time !== undefined && updates.end_time !== undefined && startTime >= endTime) {
-    return NextResponse.json({ error: 'start_time must be before end_time' }, { status: 400 })
   }
 
   const upserts = Object.entries(updates).map(([key, value]) => ({ key, value }))

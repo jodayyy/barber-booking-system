@@ -15,6 +15,15 @@ export function formatDate(dateStr: string): string {
   })
 }
 
+export function formatDateHeading(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  })
+}
+
 export function formatSlot(slot: string): string {
   const [h, m] = slot.slice(0, 5).split(':').map(Number)
   const period = h >= 12 ? 'PM' : 'AM'

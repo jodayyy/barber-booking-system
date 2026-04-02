@@ -1,142 +1,231 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { formatSlot } from '@/lib/format'
+import { getLocalDateString, formatDateHeading } from '@/lib/format'
 import { PageLayout } from '@/components/ui/PageLayout'
-import { Card } from '@/components/ui/Card'
-import { FormField } from '@/components/ui/FormField'
-import { SelectField } from '@/components/ui/SelectField'
 import { Button } from '@/components/ui/Button'
+import { ConfirmPanel } from '@/components/ui/ConfirmPanel'
 
-type Settings = {
+const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+type ScheduleItem = {
+  day_of_week: number
   start_time: string
   end_time: string
-  slot_interval: string
-  booking_window: string
+  is_closed: boolean
 }
 
-type BlockedSlot = {
-  id: string
-  date: string
-  slot: string | null
+type DateOverride = {
+  start_time: string | null
+  end_time: string | null
+  is_closed: boolean
+}
+
+type EditValues = {
+  start_time: string
+  end_time: string
+  is_closed: boolean
+}
+
+function getDayOfWeek(dateStr: string): number {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d).getDay()
+}
+
+function getUpcoming7Days(): { dateStr: string; dayNum: string; dayName: string }[] {
+  const today = new Date()
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today)
+    d.setDate(today.getDate() + i)
+    return {
+      dateStr: getLocalDateString(d),
+      dayNum: String(d.getDate()),
+      dayName: DAY_SHORT[d.getDay()],
+    }
+  })
 }
 
 export default function AdminSettingsPage() {
   const router = useRouter()
+  const days = getUpcoming7Days()
 
-  const [settings, setSettings] = useState<Settings>({
-    start_time: '09:00',
-    end_time: '21:00',
-    slot_interval: '30',
-    booking_window: '14',
-  })
-  const [settingsLoading, setSettingsLoading] = useState(true)
-  const [settingsSaving, setSettingsSaving] = useState(false)
-  const [settingsError, setSettingsError] = useState('')
-  const [settingsSaved, setSettingsSaved] = useState(false)
+  // Slot interval
+  const [slotInterval, setSlotInterval] = useState('30')
+  const [slotSaving, setSlotSaving] = useState(false)
+  const [slotSaved, setSlotSaved] = useState(false)
 
-  const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([])
-  const [blocksLoading, setBlocksLoading] = useState(true)
-  const [blockDate, setBlockDate] = useState('')
-  const [blockSlot, setBlockSlot] = useState('')
-  const [blocking, setBlocking] = useState(false)
-  const [blockError, setBlockError] = useState('')
-  const [unblocking, setUnblocking] = useState<string | null>(null)
+  // Weekly schedule (read-only — used to compute defaults for the panel)
+  const [schedule, setSchedule] = useState<ScheduleItem[]>([])
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [sRes, bRes] = await Promise.all([
-          fetch('/api/admin/settings'),
-          fetch('/api/admin/blocked-slots'),
-        ])
-        if (sRes.status === 401 || bRes.status === 401) {
-          router.push('/admin/login')
-          return
-        }
-        const sData = await sRes.json()
-        const bData = await bRes.json()
-        if (sRes.ok) setSettings((prev) => ({ ...prev, ...sData }))
-        if (bRes.ok) setBlockedSlots(bData)
-      } finally {
-        setSettingsLoading(false)
-        setBlocksLoading(false)
+  // Date overrides
+  const [overrides, setOverrides] = useState<Record<string, DateOverride>>({})
+
+  // Selected date + inline panel
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [editValues, setEditValues] = useState<EditValues | null>(null)
+  const [panelSaving, setPanelSaving] = useState(false)
+  const [panelSaved, setPanelSaved] = useState(false)
+
+  // Reset to defaults
+  const [resetting, setResetting] = useState(false)
+  const [resetConfirm, setResetConfirm] = useState(false)
+  const [resetError, setResetError] = useState('')
+  const [resetDone, setResetDone] = useState(false)
+
+  const [loading, setLoading] = useState(true)
+
+  const load = useCallback(async () => {
+    try {
+      const [settingsRes, scheduleRes, overridesRes] = await Promise.all([
+        fetch('/api/admin/settings'),
+        fetch('/api/admin/schedule'),
+        fetch('/api/admin/date-overrides'),
+      ])
+
+      if (settingsRes.status === 401) { router.push('/admin/login'); return }
+
+      if (settingsRes.ok) {
+        const d = await settingsRes.json()
+        setSlotInterval(d.slot_interval ?? '30')
       }
+
+      if (scheduleRes.ok) {
+        setSchedule(await scheduleRes.json())
+      }
+
+      if (overridesRes.ok) {
+        const d: Array<{ date: string } & DateOverride> = await overridesRes.json()
+        const map: Record<string, DateOverride> = {}
+        for (const o of d) map[o.date] = { start_time: o.start_time, end_time: o.end_time, is_closed: o.is_closed }
+        setOverrides(map)
+      }
+    } finally {
+      setLoading(false)
     }
-    load()
   }, [router])
 
-  async function handleSaveSettings(e: { preventDefault(): void }) {
+  useEffect(() => { load() }, [load])
+
+  // Sync panel when selectedDate, schedule, or overrides change
+  useEffect(() => {
+    if (!selectedDate) { setEditValues(null); return }
+    setPanelSaved(false)
+
+    const override = overrides[selectedDate]
+    if (override) {
+      setEditValues({
+        start_time: override.start_time?.slice(0, 5) ?? '10:00',
+        end_time: override.end_time?.slice(0, 5) ?? '22:00',
+        is_closed: override.is_closed,
+      })
+      return
+    }
+
+    const dow = getDayOfWeek(selectedDate)
+    const def = schedule.find((s) => s.day_of_week === dow)
+    setEditValues(def
+      ? { start_time: (def.start_time as string).slice(0, 5), end_time: (def.end_time as string).slice(0, 5), is_closed: def.is_closed }
+      : { start_time: '10:00', end_time: '22:00', is_closed: false }
+    )
+  }, [selectedDate, overrides, schedule])
+
+  async function handleSaveSlot(e: { preventDefault(): void }) {
     e.preventDefault()
-    setSettingsSaving(true)
-    setSettingsError('')
-    setSettingsSaved(false)
+    setSlotSaving(true)
+    setSlotSaved(false)
     try {
       const res = await fetch('/api/admin/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify({ slot_interval: slotInterval }),
       })
       if (res.status === 401) { router.push('/admin/login'); return }
-      if (res.ok) {
-        setSettingsSaved(true)
-        setTimeout(() => setSettingsSaved(false), 3000)
-      } else {
-        const data = await res.json()
-        setSettingsError(data.error ?? 'Failed to save settings')
-      }
-    } catch {
-      setSettingsError('Something went wrong')
+      if (res.ok) { setSlotSaved(true); setTimeout(() => setSlotSaved(false), 3000) }
     } finally {
-      setSettingsSaving(false)
+      setSlotSaving(false)
     }
   }
 
-  async function handleBlock(e: { preventDefault(): void }) {
-    e.preventDefault()
-    if (!blockDate) return
-    setBlocking(true)
-    setBlockError('')
+  async function handleSavePanel() {
+    if (!selectedDate || !editValues) return
+    setPanelSaving(true)
     try {
-      const res = await fetch('/api/admin/blocked-slots', {
+      const res = await fetch('/api/admin/date-overrides', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: blockDate, slot: blockSlot || null }),
+        body: JSON.stringify({ date: selectedDate, ...editValues }),
       })
       if (res.status === 401) { router.push('/admin/login'); return }
       if (res.ok) {
-        const refreshed = await fetch('/api/admin/blocked-slots')
-        if (refreshed.ok) setBlockedSlots(await refreshed.json())
-        setBlockDate('')
-        setBlockSlot('')
-      } else {
-        const data = await res.json()
-        setBlockError(data.error ?? 'Failed to block')
+        setOverrides((prev) => ({ ...prev, [selectedDate]: { ...editValues } }))
+        setPanelSaved(true)
+        setTimeout(() => setPanelSaved(false), 3000)
       }
-    } catch {
-      setBlockError('Something went wrong')
     } finally {
-      setBlocking(false)
+      setPanelSaving(false)
     }
   }
 
-  async function handleUnblock(item: BlockedSlot) {
-    setUnblocking(item.id)
+  async function handleRevertToDefault() {
+    if (!selectedDate) return
+    setPanelSaving(true)
     try {
-      const res = await fetch('/api/admin/blocked-slots', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: item.date, slot: item.slot }),
-      })
+      const res = await fetch(`/api/admin/date-overrides?date=${selectedDate}`, { method: 'DELETE' })
       if (res.status === 401) { router.push('/admin/login'); return }
       if (res.ok) {
-        setBlockedSlots((prev) => prev.filter((b) => b.id !== item.id))
+        setOverrides((prev) => {
+          const next = { ...prev }
+          delete next[selectedDate]
+          return next
+        })
       }
     } finally {
-      setUnblocking(null)
+      setPanelSaving(false)
     }
+  }
+
+  async function handleResetToDefaults() {
+    setResetting(true)
+    setResetError('')
+    try {
+      const res = await fetch('/api/admin/schedule', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reset: true }),
+      })
+      if (res.status === 401) { router.push('/admin/login'); return }
+      if (!res.ok) {
+        const d = await res.json()
+        setResetError(d.error ?? 'Failed to reset')
+        return
+      }
+      const scheduleRes = await fetch('/api/admin/schedule')
+      if (scheduleRes.ok) setSchedule(await scheduleRes.json())
+      setOverrides({})
+      setResetConfirm(false)
+      setResetDone(true)
+      setTimeout(() => setResetDone(false), 3000)
+    } finally {
+      setResetting(false)
+    }
+  }
+
+  function getEffectiveHours(dateStr: string): { hasOverride: boolean; isClosed: boolean } {
+    const override = overrides[dateStr]
+    if (override) return { hasOverride: true, isClosed: override.is_closed }
+    const dow = getDayOfWeek(dateStr)
+    const def = schedule.find((s) => s.day_of_week === dow)
+    return { hasOverride: false, isClosed: !def || def.is_closed }
+  }
+
+  if (loading) {
+    return (
+      <PageLayout>
+        <p className="text-zinc-400 text-sm text-center py-10">Loading…</p>
+      </PageLayout>
+    )
   }
 
   return (
@@ -158,131 +247,142 @@ export default function AdminSettingsPage() {
         </div>
       </div>
 
-      {/* Shop hours */}
-      <Card className="px-5 py-5 mb-6">
-        <h2 className="text-sm font-semibold text-zinc-900 mb-4">Shop Hours</h2>
+      {/* Slot interval */}
+      <form onSubmit={handleSaveSlot} className="flex items-end gap-3 mb-8">
+        <div className="flex-1">
+          <label className="block text-xs font-medium text-zinc-500 mb-1.5">Slot interval</label>
+          <select
+            value={slotInterval}
+            onChange={(e) => setSlotInterval(e.target.value)}
+            className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
+          >
+            <option value="15">15 min</option>
+            <option value="30">30 min</option>
+            <option value="45">45 min</option>
+            <option value="60">60 min</option>
+          </select>
+        </div>
+        <Button type="submit" size="sm" disabled={slotSaving}>
+          {slotSaving ? 'Saving…' : slotSaved ? 'Saved!' : 'Save'}
+        </Button>
+      </form>
 
-        {settingsLoading ? (
-          <p className="text-zinc-400 text-sm">Loading…</p>
-        ) : (
-          <form onSubmit={handleSaveSettings} className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-3">
-              <FormField
-                label="Opens at"
-                size="sm"
-                type="time"
-                value={settings.start_time}
-                onChange={(e) => setSettings((s) => ({ ...s, start_time: e.target.value }))}
-                required
-              />
-              <FormField
-                label="Closes at"
-                size="sm"
-                type="time"
-                value={settings.end_time}
-                onChange={(e) => setSettings((s) => ({ ...s, end_time: e.target.value }))}
-                required
-              />
-            </div>
+      {/* This week */}
+      <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-3">This week</p>
 
-            <div className="grid grid-cols-2 gap-3">
-              <SelectField
-                label="Slot interval"
-                size="sm"
-                value={settings.slot_interval}
-                onChange={(e) => setSettings((s) => ({ ...s, slot_interval: e.target.value }))}
+      {/* Date strip */}
+      <div className="flex gap-1.5 mb-3">
+        {days.map(({ dateStr, dayNum, dayName }) => {
+          const { hasOverride, isClosed } = getEffectiveHours(dateStr)
+          const isSelected = selectedDate === dateStr
+
+          return (
+            <button
+              key={dateStr}
+              onClick={() => setSelectedDate(isSelected ? null : dateStr)}
+              className={`relative flex flex-col items-center flex-1 py-2.5 rounded-xl border text-sm transition-colors cursor-pointer ${
+                isSelected
+                  ? 'bg-zinc-900 border-zinc-900 text-white'
+                  : 'bg-white border-zinc-200 text-zinc-700 hover:border-zinc-400'
+              }`}
+            >
+              <span className="text-xs font-medium">{dayName}</span>
+              <span className="text-base font-bold mt-0.5">{dayNum}</span>
+              <span className={`w-1.5 h-1.5 rounded-full mt-1 ${
+                isClosed
+                  ? 'bg-red-400'
+                  : hasOverride
+                    ? (isSelected ? 'bg-amber-300' : 'bg-amber-400')
+                    : 'opacity-0'
+              }`} />
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Inline panel */}
+      {selectedDate && editValues && (
+        <div className="bg-white border border-zinc-200 rounded-2xl px-5 py-5 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-semibold text-zinc-900">{formatDateHeading(selectedDate)}</p>
+            {overrides[selectedDate] && (
+              <button
+                onClick={handleRevertToDefault}
+                disabled={panelSaving}
+                className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer disabled:opacity-50"
               >
-                <option value="15">15 min</option>
-                <option value="30">30 min</option>
-                <option value="45">45 min</option>
-                <option value="60">60 min</option>
-              </SelectField>
-
-              <div>
-                <label className="block text-xs font-medium text-zinc-500 mb-1.5">Booking window</label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={settings.booking_window}
-                    onChange={(e) => setSettings((s) => ({ ...s, booking_window: e.target.value }))}
-                    min={1}
-                    max={60}
-                    required
-                    className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white pr-10"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400">days</span>
-                </div>
-              </div>
-            </div>
-
-            {settingsError && <p className="text-red-500 text-sm">{settingsError}</p>}
-
-            <Button type="submit" disabled={settingsSaving} size="sm" className="w-full">
-              {settingsSaving ? 'Saving…' : settingsSaved ? 'Saved!' : 'Save Changes'}
-            </Button>
-          </form>
-        )}
-      </Card>
-
-      {/* Block dates */}
-      <Card className="px-5 py-5">
-        <h2 className="text-sm font-semibold text-zinc-900 mb-4">Blocked Dates &amp; Slots</h2>
-
-        <form onSubmit={handleBlock} className="flex flex-col gap-3 mb-5">
-          <div className="grid grid-cols-2 gap-3">
-            <FormField
-              label="Date"
-              size="sm"
-              type="date"
-              value={blockDate}
-              onChange={(e) => setBlockDate(e.target.value)}
-              required
-            />
-            <FormField
-              label={<>Time <span className="text-zinc-400 font-normal">(empty = full day)</span></>}
-              size="sm"
-              type="time"
-              value={blockSlot}
-              onChange={(e) => setBlockSlot(e.target.value)}
-            />
+                Revert to default
+              </button>
+            )}
           </div>
 
-          {blockError && <p className="text-red-500 text-sm">{blockError}</p>}
+          <label className="flex items-center gap-2.5 mb-4 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={editValues.is_closed}
+              onChange={(e) => setEditValues((v) => v ? { ...v, is_closed: e.target.checked } : v)}
+              className="w-4 h-4 rounded border-zinc-300 cursor-pointer"
+            />
+            <span className="text-sm text-zinc-700">Closed this day</span>
+          </label>
 
-          <Button type="submit" disabled={blocking || !blockDate} size="sm" className="w-full">
-            {blocking ? 'Blocking…' : 'Block'}
+          {!editValues.is_closed && (
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-1.5">Opens at</label>
+                <input
+                  type="time"
+                  value={editValues.start_time}
+                  onChange={(e) => setEditValues((v) => v ? { ...v, start_time: e.target.value } : v)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-500 mb-1.5">Closes at</label>
+                <input
+                  type="time"
+                  value={editValues.end_time}
+                  onChange={(e) => setEditValues((v) => v ? { ...v, end_time: e.target.value } : v)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
+                />
+              </div>
+            </div>
+          )}
+
+          <Button onClick={handleSavePanel} disabled={panelSaving} size="sm" className="w-full">
+            {panelSaving ? 'Saving…' : panelSaved ? 'Saved!' : 'Save for this date'}
           </Button>
-        </form>
+        </div>
+      )}
 
-        {blocksLoading ? (
-          <p className="text-zinc-400 text-sm">Loading…</p>
-        ) : blockedSlots.length === 0 ? (
-          <p className="text-zinc-400 text-sm">No blocked dates or slots.</p>
+      {/* Reset to defaults */}
+      <div className="border-t border-zinc-100 pt-6">
+        {!resetConfirm ? (
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-zinc-900">Reset to defaults</p>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                {resetDone ? 'Schedule restored.' : 'Restore the original weekly hours for all days'}
+              </p>
+            </div>
+            <Button variant="secondary" size="sm" onClick={() => setResetConfirm(true)}>
+              {resetDone ? 'Done!' : 'Reset'}
+            </Button>
+          </div>
         ) : (
-          <ul className="flex flex-col gap-2">
-            {blockedSlots.map((item) => (
-              <li
-                key={item.id}
-                className="flex items-center justify-between gap-3 py-2.5 border-t border-zinc-100 first:border-t-0"
-              >
-                <div>
-                  <p className="text-sm font-medium text-zinc-800">{item.date}</p>
-                  <p className="text-xs text-zinc-400 mt-0.5">
-                    {item.slot ? formatSlot(item.slot) : 'Full day'}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost-destructive"
-                  onClick={() => handleUnblock(item)}
-                  disabled={unblocking === item.id}
-                >
-                  {unblocking === item.id ? 'Removing…' : 'Remove'}
-                </Button>
-              </li>
-            ))}
-          </ul>
+          <ConfirmPanel
+            title="Reset weekly hours?"
+            description="This will restore the original shop schedule for every day of the week."
+            confirmLabel={resetting ? 'Resetting…' : 'Yes, reset'}
+            cancelLabel="Cancel"
+            onConfirm={handleResetToDefaults}
+            onCancel={() => { setResetConfirm(false); setResetError('') }}
+            disabled={resetting}
+            error={resetError}
+            size="sm"
+          />
         )}
-      </Card>
+      </div>
     </PageLayout>
   )
 }

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+function getDayOfWeek(dateStr: string): number {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d).getDay()
+}
+
 function generateSlots(startTime: string, endTime: string, intervalMinutes: number): string[] {
   const slots: string[] = []
   const [startH, startM] = startTime.split(':').map(Number)
@@ -36,8 +41,6 @@ export async function GET(request: NextRequest) {
   }
 
   const settings = Object.fromEntries(settingsRows.map((r) => [r.key, r.value]))
-  const startTime: string = settings.start_time ?? '09:00'
-  const endTime: string = settings.end_time ?? '21:00'
   const slotInterval = parseInt(settings.slot_interval ?? '30', 10) || 30
   const bookingWindow = parseInt(settings.booking_window ?? '14', 10) || 14
 
@@ -52,6 +55,40 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Date out of booking window' }, { status: 400 })
   }
 
+  // Resolve hours: date_overrides > weekly_schedule
+  const { data: override, error: overrideError } = await supabaseAdmin
+    .from('date_overrides')
+    .select('start_time, end_time, is_closed')
+    .eq('date', date)
+    .maybeSingle()
+
+  if (overrideError) {
+    return NextResponse.json({ error: 'Failed to fetch schedule' }, { status: 500 })
+  }
+
+  let startTime: string
+  let endTime: string
+
+  if (override) {
+    if (override.is_closed) return NextResponse.json({ slots: [] })
+    startTime = (override.start_time as string).slice(0, 5)
+    endTime = (override.end_time as string).slice(0, 5)
+  } else {
+    const { data: schedule, error: scheduleError } = await supabaseAdmin
+      .from('weekly_schedule')
+      .select('start_time, end_time, is_closed')
+      .eq('day_of_week', getDayOfWeek(date))
+      .single()
+
+    if (scheduleError) {
+      return NextResponse.json({ error: 'Failed to fetch schedule' }, { status: 500 })
+    }
+
+    if (!schedule || schedule.is_closed) return NextResponse.json({ slots: [] })
+    startTime = (schedule.start_time as string).slice(0, 5)
+    endTime = (schedule.end_time as string).slice(0, 5)
+  }
+
   const allSlots = generateSlots(startTime, endTime, slotInterval)
 
   const { data: bookings, error: bookingsError } = await supabaseAdmin
@@ -64,25 +101,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 })
   }
 
-  const { data: blocked, error: blockedError } = await supabaseAdmin
-    .from('blocked_slots')
-    .select('slot')
-    .eq('date', date)
-
-  if (blockedError) {
-    return NextResponse.json({ error: 'Failed to fetch blocked slots' }, { status: 500 })
-  }
-
-  // Full-day block
-  if (blocked.some((b) => b.slot === null)) {
-    return NextResponse.json({ slots: [] })
-  }
-
-  // Supabase returns TIME as "HH:MM:SS" — normalize to "HH:MM"
   const bookedSet = new Set(bookings.map((b) => (b.slot as string).slice(0, 5)))
-  const blockedSet = new Set(blocked.map((b) => (b.slot as string).slice(0, 5)))
-
-  const available = allSlots.filter((slot) => !bookedSet.has(slot) && !blockedSet.has(slot))
+  const available = allSlots.filter((slot) => !bookedSet.has(slot))
 
   return NextResponse.json({ slots: available })
 }

@@ -3,15 +3,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getLocalDateString, formatSlot } from '@/lib/format'
+import { getLocalDateString, formatSlot, formatDateHeading } from '@/lib/format'
 import { PageLayout } from '@/components/ui/PageLayout'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-
-function formatDateHeading(dateStr: string): string {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
-}
 
 type Booking = {
   id: string

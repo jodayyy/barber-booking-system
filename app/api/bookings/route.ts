@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+function getDayOfWeek(dateStr: string): number {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d).getDay()
+}
+
+function generateCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+}
+
 export async function POST(request: NextRequest) {
   let body: unknown
   try {
@@ -30,6 +40,7 @@ export async function POST(request: NextRequest) {
 
   const settings = Object.fromEntries(settingsRows.map((r) => [r.key, r.value]))
   const bookingWindow = parseInt(settings.booking_window ?? '14', 10) || 14
+  const slotInterval = parseInt(settings.slot_interval ?? '30', 10) || 30
 
   const today = new Date()
   const todayStr = today.toISOString().slice(0, 10)
@@ -41,11 +52,45 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Date out of booking window' }, { status: 400 })
   }
 
-  // Validate slot aligns with shop hours and interval
-  const startTime: string = settings.start_time ?? '09:00'
-  const endTime: string = settings.end_time ?? '21:00'
-  const slotInterval = parseInt(settings.slot_interval ?? '30', 10) || 30
+  // Resolve hours: date_overrides > weekly_schedule
+  const { data: override, error: overrideError } = await supabaseAdmin
+    .from('date_overrides')
+    .select('start_time, end_time, is_closed')
+    .eq('date', date)
+    .maybeSingle()
 
+  if (overrideError) {
+    return NextResponse.json({ error: 'Failed to check availability' }, { status: 500 })
+  }
+
+  let startTime: string
+  let endTime: string
+
+  if (override) {
+    if (override.is_closed) {
+      return NextResponse.json({ error: 'No availability on this day' }, { status: 409 })
+    }
+    startTime = (override.start_time as string).slice(0, 5)
+    endTime = (override.end_time as string).slice(0, 5)
+  } else {
+    const { data: schedule, error: scheduleError } = await supabaseAdmin
+      .from('weekly_schedule')
+      .select('start_time, end_time, is_closed')
+      .eq('day_of_week', getDayOfWeek(date))
+      .single()
+
+    if (scheduleError) {
+      return NextResponse.json({ error: 'Failed to check availability' }, { status: 500 })
+    }
+
+    if (!schedule || schedule.is_closed) {
+      return NextResponse.json({ error: 'No availability on this day' }, { status: 409 })
+    }
+    startTime = (schedule.start_time as string).slice(0, 5)
+    endTime = (schedule.end_time as string).slice(0, 5)
+  }
+
+  // Validate slot aligns with shop hours and interval
   const [sh, sm] = startTime.split(':').map(Number)
   const [eh, em] = endTime.split(':').map(Number)
   const [slh, slm] = slot.split(':').map(Number)
@@ -59,25 +104,6 @@ export async function POST(request: NextRequest) {
     (slotMinutes - startMinutes) % slotInterval !== 0
   ) {
     return NextResponse.json({ error: 'Invalid slot' }, { status: 400 })
-  }
-
-  // Check blocked slots
-  const { data: blockedSlots, error: blockedError } = await supabaseAdmin
-    .from('blocked_slots')
-    .select('slot')
-    .eq('date', date)
-
-  if (blockedError) {
-    return NextResponse.json({ error: 'Failed to check availability' }, { status: 500 })
-  }
-
-  if (blockedSlots.some((b) => b.slot === null)) {
-    return NextResponse.json({ error: 'No availability on this day' }, { status: 409 })
-  }
-
-  const blockedSet = new Set(blockedSlots.map((b) => (b.slot as string).slice(0, 5)))
-  if (blockedSet.has(slot)) {
-    return NextResponse.json({ error: 'This slot is no longer available' }, { status: 409 })
   }
 
   // Check for double booking
@@ -106,6 +132,7 @@ export async function POST(request: NextRequest) {
       date,
       slot,
       status: 'active',
+      code: generateCode(),
       whatsapp_sent: false,
     })
     .select('id')
