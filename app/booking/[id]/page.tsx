@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { formatDate, formatSlot } from '@/lib/format'
 import { PageLayout } from '@/components/ui/PageLayout'
 import { Card } from '@/components/ui/Card'
@@ -9,7 +9,7 @@ import { BookingDetailRow } from '@/components/ui/BookingDetailRow'
 import { Button } from '@/components/ui/Button'
 import { ConfirmPanel } from '@/components/ui/ConfirmPanel'
 
-function buildWhatsAppLink(phone: string, name: string, date: string, slot: string, id: string, code: string | null): string {
+function buildWhatsAppLink(phone: string, name: string, date: string, slot: string, id: string): string {
   const bookingUrl = `${window.location.origin}/booking/${id}`
   const message = [
     'Hi, I booked a haircut appointment.',
@@ -17,7 +17,6 @@ function buildWhatsAppLink(phone: string, name: string, date: string, slot: stri
     `Name: ${name}`,
     `Date: ${formatDate(date)}`,
     `Time: ${formatSlot(slot)}`,
-    ...(code ? [`Code: ${code}`] : []),
     `Link: ${bookingUrl}`,
   ].join('\n')
   const cleanPhone = phone.replace(/[^\d+]/g, '')
@@ -31,11 +30,11 @@ type Booking = {
   date: string
   slot: string
   status: string
-  code: string | null
 }
 
 export default function BookingPage() {
   const { id } = useParams<{ id: string }>()
+  const router = useRouter()
 
   const [booking, setBooking] = useState<Booking | null>(null)
   const [loading, setLoading] = useState(true)
@@ -102,10 +101,20 @@ export default function BookingPage() {
     )
   }
 
-  const waLink = buildWhatsAppLink(booking.phone, booking.name, booking.date, booking.slot, booking.id, booking.code)
+  const waLink = buildWhatsAppLink(booking.phone, booking.name, booking.date, booking.slot, booking.id)
 
   return (
     <PageLayout>
+      <button
+        onClick={() => router.push('/')}
+        className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-800 mb-6 cursor-pointer"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back
+      </button>
+
       {/* Status indicator */}
       <div className="flex flex-col items-center text-center mb-10">
         <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${cancelled ? 'bg-zinc-200' : 'bg-zinc-900'}`}>
@@ -131,7 +140,6 @@ export default function BookingPage() {
         <BookingDetailRow label="Name" value={booking.name} />
         <BookingDetailRow label="Date" value={formatDate(booking.date)} />
         <BookingDetailRow label="Time" value={formatSlot(booking.slot)} />
-        {booking.code && <BookingDetailRow label="Code" value={booking.code} />}
         <BookingDetailRow
           label="Status"
           value={cancelled ? 'Cancelled' : 'Confirmed'}

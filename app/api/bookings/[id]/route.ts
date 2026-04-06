@@ -6,7 +6,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const { data: booking, error } = await supabaseAdmin
     .from('bookings')
-    .select('id, name, phone, date, slot, status, code')
+    .select('id, name, phone, date, slot, status')
     .eq('id', id)
     .maybeSingle()
 

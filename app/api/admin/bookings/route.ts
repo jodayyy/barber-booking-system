@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from('bookings')
-    .select('id, name, phone, date, slot, status, created_at')
+    .select('id, name, phone, date, slot, status')
     .eq('date', date)
     .order('slot', { ascending: true })
 

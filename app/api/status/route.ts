@@ -34,7 +34,13 @@ export async function GET() {
       !!override.start_time &&
       !!override.end_time &&
       isWithinHours(override.start_time as string, override.end_time as string, currentMinutes)
-    return NextResponse.json({ open, bookingWindow })
+    return NextResponse.json({
+      open,
+      bookingWindow,
+      hours: (!override.is_closed && override.start_time && override.end_time)
+        ? { start: override.start_time, end: override.end_time }
+        : null,
+    })
   }
 
   const { data: schedule } = await supabaseAdmin
@@ -49,5 +55,11 @@ export async function GET() {
     !!schedule.end_time &&
     isWithinHours(schedule.start_time as string, schedule.end_time as string, currentMinutes)
 
-  return NextResponse.json({ open, bookingWindow })
+  return NextResponse.json({
+    open,
+    bookingWindow,
+    hours: (schedule && !schedule.is_closed && schedule.start_time && schedule.end_time)
+      ? { start: schedule.start_time, end: schedule.end_time }
+      : null,
+  })
 }

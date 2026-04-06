@@ -31,7 +31,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  const allowed = ['slot_interval', 'booking_window']
+  const allowed = ['booking_window']
   const updates = body as Record<string, unknown>
 
   for (const key of Object.keys(updates)) {
@@ -41,11 +41,6 @@ export async function PUT(request: NextRequest) {
     if (typeof updates[key] !== 'string') {
       return NextResponse.json({ error: `Invalid value for: ${key}` }, { status: 400 })
     }
-  }
-
-  const interval = updates.slot_interval !== undefined ? parseInt(updates.slot_interval as string, 10) : NaN
-  if (updates.slot_interval !== undefined && (isNaN(interval) || interval < 5 || interval > 120)) {
-    return NextResponse.json({ error: 'slot_interval must be between 5 and 120' }, { status: 400 })
   }
 
   const bookingWindowDays = updates.booking_window !== undefined ? parseInt(updates.booking_window as string, 10) : NaN

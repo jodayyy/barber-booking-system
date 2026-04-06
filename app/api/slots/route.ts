@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
   }
 
   const settings = Object.fromEntries(settingsRows.map((r) => [r.key, r.value]))
-  const slotInterval = parseInt(settings.slot_interval ?? '30', 10) || 30
+  const slotInterval = 45
   const bookingWindow = parseInt(settings.booking_window ?? '14', 10) || 14
 
   // Validate date is within booking window
@@ -102,7 +102,23 @@ export async function GET(request: NextRequest) {
   }
 
   const bookedSet = new Set(bookings.map((b) => (b.slot as string).slice(0, 5)))
-  const available = allSlots.filter((slot) => !bookedSet.has(slot))
 
-  return NextResponse.json({ slots: available })
+  const now = new Date()
+  const isToday = date === now.toISOString().slice(0, 10)
+  const currentMinutes = now.getHours() * 60 + now.getMinutes()
+  const cutoffMinutes = currentMinutes + 60
+
+  const available: string[] = []
+  const booked: string[] = []
+
+  for (const slot of allSlots) {
+    if (isToday) {
+      const [h, m] = slot.split(':').map(Number)
+      if (h * 60 + m <= cutoffMinutes) continue
+    }
+    if (bookedSet.has(slot)) booked.push(slot)
+    else available.push(slot)
+  }
+
+  return NextResponse.json({ slots: available, bookedSlots: booked })
 }

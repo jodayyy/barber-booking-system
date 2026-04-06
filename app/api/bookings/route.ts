@@ -6,11 +6,6 @@ function getDayOfWeek(dateStr: string): number {
   return new Date(y, m - 1, d).getDay()
 }
 
-function generateCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
-}
-
 export async function POST(request: NextRequest) {
   let body: unknown
   try {
@@ -132,8 +127,6 @@ export async function POST(request: NextRequest) {
       date,
       slot,
       status: 'active',
-      code: generateCode(),
-      whatsapp_sent: false,
     })
     .select('id')
     .single()

@@ -26,11 +26,16 @@ export function Collapsible({ label, children, defaultOpen = false, className = 
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      {open && (
-        <div className="border-t border-zinc-100 px-4 pt-5 pb-5">
-          {children}
+      <div
+        className="grid transition-[grid-template-rows] duration-300 ease-in-out"
+        style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
+      >
+        <div className="overflow-hidden">
+          <div className="border-t border-zinc-100 px-4 pt-5 pb-5">
+            {children}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }
