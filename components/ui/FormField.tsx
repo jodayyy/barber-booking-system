@@ -1,6 +1,6 @@
 import { InputHTMLAttributes } from 'react'
 
-interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
+interface FormFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label: React.ReactNode
   size?: 'md' | 'sm'
   rightElement?: React.ReactNode
