@@ -31,7 +31,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  const allowed = ['booking_window']
+  const allowed = ['booking_window', 'shop_name', 'shop_phone']
   const updates = body as Record<string, unknown>
 
   for (const key of Object.keys(updates)) {

@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  const { username, password } = body as Record<string, unknown>
+  const { username, password, rememberMe } = body as Record<string, unknown>
 
   if (typeof username !== 'string' || typeof password !== 'string') {
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   }
 
   const token = generateSessionToken()
-  await setSessionCookie(token)
+  await setSessionCookie(token, rememberMe === true)
 
   return NextResponse.json({ ok: true })
 }

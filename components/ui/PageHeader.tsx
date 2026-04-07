@@ -8,11 +8,21 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ title, subtitle, isOpen, className = '' }: PageHeaderProps) {
+  const today = (() => {
+    const d = new Date()
+    const wd = d.toLocaleDateString('en-GB', { weekday: 'long' })
+    const day = d.getDate()
+    const mo = d.toLocaleDateString('en-GB', { month: 'long' })
+    return `${wd}, ${day} ${mo}`
+  })()
+
   return (
-    <div className={className}>
-      <h1 className="text-2xl font-bold text-zinc-900 mb-3 text-center">{title}</h1>
+    <div className={`flex flex-col items-center text-center gap-4 ${className}`}>
+      <h1 className="text-2xl font-bold text-zinc-900">{title}</h1>
+
       {isOpen !== undefined && (
-        <div className="flex items-center justify-center h-8">
+        <div className="flex flex-col items-center gap-0.5">
+          <p className="text-sm text-zinc-500">{today}</p>
           {isOpen === null ? (
             <Spinner />
           ) : (
@@ -20,9 +30,9 @@ export function PageHeader({ title, subtitle, isOpen, className = '' }: PageHead
               {isOpen ? 'Open' : 'Closed'}
             </p>
           )}
+          {subtitle && <p className="text-sm text-zinc-500">{subtitle}</p>}
         </div>
       )}
-      {subtitle && <p className="text-zinc-500 text-sm text-center">{subtitle}</p>}
     </div>
   )
 }

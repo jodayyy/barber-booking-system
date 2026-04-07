@@ -22,6 +22,8 @@ export async function GET() {
     .select('key, value')
   const settings = Object.fromEntries((settingsRows ?? []).map((r) => [r.key, r.value]))
   const bookingWindow = parseInt(settings.booking_window ?? '14', 10) || 14
+  const shopName = settings.shop_name ?? null
+  const shopPhone = settings.shop_phone ?? null
 
   const { data: override } = await supabaseAdmin
     .from('date_overrides')
@@ -37,6 +39,8 @@ export async function GET() {
     return NextResponse.json({
       open,
       bookingWindow,
+      shopName,
+      shopPhone,
       hours: (!override.is_closed && override.start_time && override.end_time)
         ? { start: override.start_time, end: override.end_time }
         : null,
@@ -58,6 +62,8 @@ export async function GET() {
   return NextResponse.json({
     open,
     bookingWindow,
+    shopName,
+    shopPhone,
     hours: (schedule && !schedule.is_closed && schedule.start_time && schedule.end_time)
       ? { start: schedule.start_time, end: schedule.end_time }
       : null,

@@ -48,7 +48,7 @@ export async function getSession(): Promise<string | null> {
   return verifyToken(raw)
 }
 
-export async function setSessionCookie(token: string): Promise<void> {
+export async function setSessionCookie(token: string, rememberMe = false): Promise<void> {
   const signed = await signToken(token)
   const store = await cookies()
   store.set(SESSION_COOKIE, signed, {
@@ -56,7 +56,7 @@ export async function setSessionCookie(token: string): Promise<void> {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    ...(rememberMe ? { maxAge: 60 * 60 * 24 * 30 } : {}), // 30 days if remembered, else session cookie
   })
 }
 

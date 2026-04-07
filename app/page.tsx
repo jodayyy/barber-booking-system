@@ -89,6 +89,7 @@ export default function BookingPage() {
 
   const [isOpen, setIsOpen] = useState<boolean | null>(null)
   const [hoursLabel, setHoursLabel] = useState<string | null>(null)
+  const [shopName, setShopName] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/status')
@@ -96,6 +97,7 @@ export default function BookingPage() {
       .then((d) => {
         setIsOpen(d.open)
         setDates(generateDateRange(d.bookingWindow ?? 14))
+        setShopName(d.shopName ?? null)
         if (d.hours) {
           const fmt = (t: string) => {
             const [h, m] = t.slice(0, 5).split(':').map(Number)
@@ -206,13 +208,13 @@ export default function BookingPage() {
   return (
     <PageLayout>
       <PageHeader
-        title={`Welcome to ${process.env.NEXT_PUBLIC_BARBERSHOP_NAME}`}
+        title={shopName ? `Welcome to ${shopName}` : 'Welcome'}
         isOpen={isOpen}
         subtitle={hoursLabel ?? undefined}
         className="mb-8"
       />
 
-      <Collapsible label="Book an appointment" className="mb-3">
+      <Collapsible label="Book an Appointment" className="mb-3">
         <div className="flex flex-col gap-8">
           {/* Date strip */}
           <section>
@@ -354,7 +356,7 @@ export default function BookingPage() {
         </div>
       </Collapsible>
 
-      <Collapsible label="Manage booking">
+      <Collapsible label="Manage Booking">
         <div className="flex flex-col gap-4">
           <LookupForm
             type="tel"

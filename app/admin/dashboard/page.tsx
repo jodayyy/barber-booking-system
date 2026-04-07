@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Collapsible } from '@/components/ui/Collapsible'
 import { ConfirmPanel } from '@/components/ui/ConfirmPanel'
+import { Spinner } from '@/components/ui/Spinner'
 
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -67,6 +68,15 @@ function getUpcoming7Days(): { dateStr: string; dayNum: string; dayName: string 
   })
 }
 
+function getDaysFrom(startStr: string, n: number): { dateStr: string; dayNum: string; dayName: string }[] {
+  return Array.from({ length: n }, (_, i) => {
+    const d = addDays(startStr, i)
+    const [y, m, day] = d.split('-').map(Number)
+    const date = new Date(y, m - 1, day)
+    return { dateStr: d, dayNum: String(date.getDate()), dayName: DAY_SHORT[date.getDay()] }
+  })
+}
+
 export default function AdminDashboardPage() {
   const router = useRouter()
 
@@ -91,6 +101,9 @@ export default function AdminDashboardPage() {
   const [resetError, setResetError] = useState('')
   const [resetDone, setResetDone] = useState(false)
 
+  const [windowStart, setWindowStart] = useState(addDays(today, -2))
+  const [dayCounts, setDayCounts] = useState<Record<string, number>>({})
+
   const days = getUpcoming7Days()
 
   const fetchBookings = useCallback(async (date: string) => {
@@ -109,7 +122,35 @@ export default function AdminDashboardPage() {
     }
   }, [router])
 
+  const fetchDayCounts = useCallback(async (start: string) => {
+    const dates = getDaysFrom(start, 5).map((d) => d.dateStr)
+    const results = await Promise.all(
+      dates.map(async (date) => {
+        try {
+          const res = await fetch(`/api/admin/bookings?date=${date}`)
+          if (!res.ok) return [date, 0] as [string, number]
+          const data: Booking[] = await res.json()
+          return [date, data.filter((b) => b.status === 'active').length] as [string, number]
+        } catch {
+          return [date, 0] as [string, number]
+        }
+      })
+    )
+    setDayCounts((prev) => {
+      const next = { ...prev }
+      for (const [date, count] of results) next[date] = count
+      return next
+    })
+  }, [])
+
   useEffect(() => { fetchBookings(selectedDate) }, [selectedDate, fetchBookings])
+  useEffect(() => { fetchDayCounts(windowStart) }, [windowStart, fetchDayCounts])
+  useEffect(() => {
+    setDayCounts((prev) => ({
+      ...prev,
+      [selectedDate]: bookings.filter((b) => b.status === 'active').length,
+    }))
+  }, [bookings, selectedDate])
 
   const loadSettings = useCallback(async () => {
     const [scheduleRes, overridesRes] = await Promise.all([
@@ -251,9 +292,8 @@ export default function AdminDashboardPage() {
     return { hasOverride: false, isClosed: !def || def.is_closed }
   }
 
-  const canGoPrev = selectedDate > addDays(today, -7)
-  const canGoNext = selectedDate < today
-  const activeCount = bookings.filter((b) => b.status === 'active').length
+  const canWindowPrev = windowStart > addDays(today, -7)
+  const canWindowNext = windowStart < addDays(today, 3)
 
   return (
     <PageLayout>
@@ -261,7 +301,6 @@ export default function AdminDashboardPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">Dashboard</h1>
-          <p className="text-zinc-500 text-sm mt-0.5">Manage today&apos;s bookings</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
@@ -286,53 +325,78 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Date navigation */}
-      <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={() => setSelectedDate((d) => addDays(d, -1))}
-          disabled={!canGoPrev}
-          className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 disabled:opacity-30 hover:border-zinc-400 transition-colors cursor-pointer disabled:cursor-default"
-          aria-label="Previous day"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
+      {/* Bookings */}
+      <Collapsible label="Bookings" defaultOpen className="mb-4">
+        {/* Date strip */}
+        <div className="flex items-center gap-1.5 mb-4">
+          <button
+            onClick={() => { const s = addDays(windowStart, -5); setWindowStart(s); setSelectedDate(addDays(s, 4)) }}
+            disabled={!canWindowPrev}
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 disabled:opacity-30 hover:border-zinc-400 transition-colors cursor-pointer disabled:cursor-default shrink-0"
+            aria-label="Previous week"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
 
-        <div className="text-center">
-          <p className="text-sm font-semibold text-zinc-900">{formatDateHeading(selectedDate)}</p>
-          {selectedDate === today && (
-            <p className="text-xs text-zinc-400 mt-0.5">Today</p>
-          )}
+          <div className="flex gap-1.5 flex-1">
+            {getDaysFrom(windowStart, 5).map(({ dateStr, dayNum, dayName }) => {
+              const isSelected = selectedDate === dateStr
+              const isToday = dateStr === today
+              return (
+                <button
+                  key={dateStr}
+                  onClick={() => setSelectedDate(dateStr)}
+                  className={`flex flex-col items-center flex-1 py-2.5 rounded-xl border text-sm transition-colors cursor-pointer ${
+                    isSelected
+                      ? 'bg-zinc-900 border-zinc-900 text-white'
+                      : 'bg-white border-zinc-200 text-zinc-700 hover:border-zinc-400'
+                  }`}
+                >
+                  <span className="text-xs font-medium">{dayName}</span>
+                  <span className="text-base font-bold mt-0.5">{dayNum}</span>
+                  {(dayCounts[dateStr] ?? 0) > 0 ? (
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full mt-1 leading-none ${
+                      isSelected ? 'bg-zinc-700 text-white' : 'bg-zinc-100 text-zinc-600'
+                    }`}>
+                      {dayCounts[dateStr]}
+                    </span>
+                  ) : (
+                    <span className={`w-1.5 h-1.5 rounded-full mt-1 ${
+                      isToday ? (isSelected ? 'bg-zinc-500' : 'bg-zinc-400') : 'opacity-0'
+                    }`} />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          <button
+            onClick={() => { const s = addDays(windowStart, 5); setWindowStart(s); setSelectedDate(s) }}
+            disabled={!canWindowNext}
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 disabled:opacity-30 hover:border-zinc-400 transition-colors cursor-pointer disabled:cursor-default shrink-0"
+            aria-label="Next week"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
         </div>
 
-        <button
-          onClick={() => setSelectedDate((d) => addDays(d, 1))}
-          disabled={!canGoNext}
-          className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 disabled:opacity-30 hover:border-zinc-400 transition-colors cursor-pointer disabled:cursor-default"
-          aria-label="Next day"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Bookings */}
-      {loading && (
-        <p className="text-zinc-400 text-sm text-center py-10">Loading…</p>
-      )}
-      {error && (
-        <p className="text-red-500 text-sm text-center py-10">{error}</p>
-      )}
-      {!loading && !error && bookings.length === 0 && (
-        <p className="text-zinc-400 text-sm text-center py-10">No bookings for this day.</p>
-      )}
-      {!loading && bookings.length > 0 && (
-        <>
-          <p className="text-xs text-zinc-400 mb-3">
-            {activeCount} active · {bookings.length - activeCount} cancelled
-          </p>
+        {/* Booking list */}
+        {loading && (
+          <div className="flex justify-center py-8">
+            <Spinner />
+          </div>
+        )}
+        {error && (
+          <p className="text-red-500 text-sm text-center py-8">{error}</p>
+        )}
+        {!loading && !error && bookings.length === 0 && (
+          <p className="text-zinc-400 text-sm text-center py-8">No bookings for this day.</p>
+        )}
+        {!loading && bookings.length > 0 && (
           <ul className="flex flex-col gap-3">
             {bookings.map((booking) => (
               <li key={booking.id}>
@@ -402,11 +466,11 @@ export default function AdminDashboardPage() {
               </li>
             ))}
           </ul>
-        </>
-      )}
+        )}
+      </Collapsible>
 
       {/* Manage Shop Hours */}
-      <Collapsible label="Manage Shop Hours" className="mt-8">
+      <Collapsible label="Manage Shop Hours">
         {/* Date strip */}
         <div className="flex gap-1.5 mb-3">
           {days.map(({ dateStr, dayNum, dayName }) => {
