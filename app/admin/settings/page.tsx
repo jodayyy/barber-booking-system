@@ -112,23 +112,26 @@ export default function AdminSettingsPage() {
   return (
     <PageLayout>
       {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <Link
-          href="/admin/dashboard"
-          className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400 transition-colors"
-          aria-label="Back to dashboard"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Settings</h1>
-          <p className="text-zinc-500 text-sm mt-0.5">Shop configuration</p>
+      <div className="px-4 pt-6 pb-2">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/dashboard"
+            className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400 transition-colors"
+            aria-label="Back to dashboard"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-zinc-900">Settings</h1>
+            <p className="text-zinc-500 text-sm mt-0.5">Shop configuration</p>
+          </div>
         </div>
       </div>
 
-      <Collapsible label="Owner's Info" className="mb-3">
+      <div className="border-t border-zinc-200 sm:border-t-0 flex flex-col sm:gap-3 pb-8">
+      <Collapsible label="Owner's Info">
         {loading ? (
           <div className="flex justify-center py-4">
             <Spinner />
@@ -241,6 +244,7 @@ export default function AdminSettingsPage() {
         )}
         </>)}
       </Collapsible>
+      </div>
     </PageLayout>
   )
 }

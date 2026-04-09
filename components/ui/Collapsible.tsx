@@ -13,7 +13,7 @@ export function Collapsible({ label, children, defaultOpen = false, className = 
   const [open, setOpen] = useState(defaultOpen)
 
   return (
-    <div className={`border border-zinc-200 rounded-2xl ${className}`}>
+    <div className={`border-b border-zinc-200 sm:border sm:rounded-2xl ${className}`}>
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between px-4 py-4 text-left cursor-pointer"

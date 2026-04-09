@@ -207,14 +207,16 @@ export default function BookingPage() {
 
   return (
     <PageLayout>
-      <PageHeader
-        title={shopName ? `Welcome to ${shopName}` : 'Welcome'}
-        isOpen={isOpen}
-        subtitle={hoursLabel ?? undefined}
-        className="mb-8"
-      />
+      <div className="px-4 pt-8 pb-6">
+        <PageHeader
+          title={shopName ? `Welcome to ${shopName}` : 'Welcome'}
+          isOpen={isOpen}
+          subtitle={hoursLabel ?? undefined}
+        />
+      </div>
 
-      <Collapsible label="Book an Appointment" className="mb-3">
+      <div className="border-t border-zinc-200 sm:border-t-0 flex flex-col sm:gap-3 pb-24">
+      <Collapsible label="Book an Appointment">
         <div className="flex flex-col gap-8">
           {/* Date strip */}
           <section>
@@ -370,6 +372,7 @@ export default function BookingPage() {
           {manageError && <p className="text-red-500 text-sm">{manageError}</p>}
         </div>
       </Collapsible>
+      </div>
 
       <div className="fixed bottom-6 right-6 flex flex-col gap-2">
         {process.env.NEXT_PUBLIC_SHOP_WHATSAPP && (
