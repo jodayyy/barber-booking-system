@@ -537,7 +537,7 @@ export default function AdminDashboardPage() {
                     type="time"
                     value={editValues.start_time}
                     onChange={(e) => setEditValues((v) => v ? { ...v, start_time: e.target.value } : v)}
-                    className="w-full min-w-0 px-2 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
+                    className="w-full min-w-0 px-4 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
                   />
                 </div>
                 <div className="min-w-0">
@@ -546,7 +546,7 @@ export default function AdminDashboardPage() {
                     type="time"
                     value={editValues.end_time}
                     onChange={(e) => setEditValues((v) => v ? { ...v, end_time: e.target.value } : v)}
-                    className="w-full min-w-0 px-2 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
+                    className="w-full min-w-0 px-4 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
                   />
                 </div>
               </div>

@@ -220,7 +220,7 @@ export default function AdminSettingsPage() {
                     type="time"
                     value={selectedDay.start_time.slice(0, 5)}
                     onChange={(e) => updateDay(selectedDay.day_of_week, { start_time: e.target.value })}
-                    className="w-full min-w-0 px-2 py-1.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
+                    className="w-full min-w-0 px-4 py-1.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
                   />
                 </div>
                 <div className="min-w-0">
@@ -229,7 +229,7 @@ export default function AdminSettingsPage() {
                     type="time"
                     value={selectedDay.end_time.slice(0, 5)}
                     onChange={(e) => updateDay(selectedDay.day_of_week, { end_time: e.target.value })}
-                    className="w-full min-w-0 px-2 py-1.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
+                    className="w-full min-w-0 px-4 py-1.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
                   />
                 </div>
               </div>
