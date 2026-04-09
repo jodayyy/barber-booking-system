@@ -199,7 +199,7 @@ export default function AdminSettingsPage() {
 
         {/* Edit panel */}
         {selectedDay && (
-          <div className="bg-white border border-zinc-200 rounded-2xl px-5 py-5 mb-4">
+          <div className="bg-white border border-zinc-200 rounded-2xl px-3 py-5 mb-4">
             <p className="text-sm font-semibold text-zinc-900 mb-4">{DAY_NAMES[selectedDay.day_of_week]}</p>
 
             <label className="flex items-center gap-2.5 mb-4 cursor-pointer select-none">
@@ -220,7 +220,7 @@ export default function AdminSettingsPage() {
                     type="time"
                     value={selectedDay.start_time.slice(0, 5)}
                     onChange={(e) => updateDay(selectedDay.day_of_week, { start_time: e.target.value })}
-                    className="w-full min-w-0 px-4 py-1.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
+                    className="w-full min-w-0 max-w-full px-2 py-1.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
                   />
                 </div>
                 <div className="min-w-0">
@@ -229,7 +229,7 @@ export default function AdminSettingsPage() {
                     type="time"
                     value={selectedDay.end_time.slice(0, 5)}
                     onChange={(e) => updateDay(selectedDay.day_of_week, { end_time: e.target.value })}
-                    className="w-full min-w-0 px-4 py-1.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
+                    className="w-full min-w-0 max-w-full px-2 py-1.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
                   />
                 </div>
               </div>

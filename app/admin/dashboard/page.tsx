@@ -505,7 +505,7 @@ export default function AdminDashboardPage() {
 
         {/* Edit panel */}
         {selectedOverrideDate && editValues && (
-          <div className="bg-white border border-zinc-200 rounded-2xl px-5 py-5 mb-4">
+          <div className="bg-white border border-zinc-200 rounded-2xl px-3 py-5 mb-4">
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm font-semibold text-zinc-900">{formatDateHeading(selectedOverrideDate)}</p>
               {overrides[selectedOverrideDate] && (
@@ -537,7 +537,7 @@ export default function AdminDashboardPage() {
                     type="time"
                     value={editValues.start_time}
                     onChange={(e) => setEditValues((v) => v ? { ...v, start_time: e.target.value } : v)}
-                    className="w-full min-w-0 px-4 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
+                    className="w-full min-w-0 max-w-full px-2 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
                   />
                 </div>
                 <div className="min-w-0">
@@ -546,7 +546,7 @@ export default function AdminDashboardPage() {
                     type="time"
                     value={editValues.end_time}
                     onChange={(e) => setEditValues((v) => v ? { ...v, end_time: e.target.value } : v)}
-                    className="w-full min-w-0 px-4 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
+                    className="w-full min-w-0 max-w-full px-2 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
                   />
                 </div>
               </div>
