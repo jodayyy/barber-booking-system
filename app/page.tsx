@@ -214,16 +214,9 @@ export default function BookingPage() {
 
   return (
     <PageLayout>
-      {/* Full-width dark header — negative margin pulls it behind the notch in standalone mode */}
-      <div
-        className="bg-zinc-900 px-5 pb-7"
-        style={{
-          marginTop: 'calc(-1 * env(safe-area-inset-top))',
-          paddingTop: 'calc(env(safe-area-inset-top) + 1.75rem)',
-        }}
-      >
+      <div className="px-5 pt-8 pb-6">
         <p className="text-zinc-400 text-sm mb-1.5">{todayLabel}</p>
-        <h1 className="text-[1.6rem] font-bold text-white leading-tight mb-3">
+        <h1 className="text-[1.6rem] font-bold text-zinc-900 leading-tight mb-3">
           {shopName ? `Welcome to ${shopName}` : 'Welcome'}
         </h1>
         {isOpen === null ? (

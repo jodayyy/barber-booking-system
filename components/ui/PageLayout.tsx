@@ -30,7 +30,7 @@ export function PageLayout({ children, centered = false }: PageLayoutProps) {
     )
   }
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col" style={safeArea}>
+    <div className="min-h-svh bg-zinc-50 flex flex-col" style={safeArea}>
       <div className="flex-1 w-full max-w-lg mx-auto">{children}</div>
       <Footer />
     </div>
