@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getLocalNow } from '@/lib/time'
 
 function getDayOfWeek(dateStr: string): number {
   const [y, m, d] = dateStr.split('-').map(Number)
@@ -13,9 +14,7 @@ function isWithinHours(startTime: string, endTime: string, currentMinutes: numbe
 }
 
 export async function GET() {
-  const now = new Date()
-  const todayStr = now.toISOString().slice(0, 10)
-  const currentMinutes = now.getHours() * 60 + now.getMinutes()
+  const { dateStr: todayStr, currentMinutes } = getLocalNow()
 
   const { data: settingsRows } = await supabaseAdmin
     .from('settings')

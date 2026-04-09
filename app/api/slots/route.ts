@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getLocalNow, addDays } from '@/lib/time'
 
 function getDayOfWeek(dateStr: string): number {
   const [y, m, d] = dateStr.split('-').map(Number)
@@ -45,11 +46,8 @@ export async function GET(request: NextRequest) {
   const bookingWindow = parseInt(settings.booking_window ?? '14', 10) || 14
 
   // Validate date is within booking window
-  const today = new Date()
-  const todayStr = today.toISOString().slice(0, 10)
-  const maxDate = new Date(today)
-  maxDate.setDate(maxDate.getDate() + bookingWindow)
-  const maxDateStr = maxDate.toISOString().slice(0, 10)
+  const { dateStr: todayStr, currentMinutes } = getLocalNow()
+  const maxDateStr = addDays(todayStr, bookingWindow)
 
   if (date < todayStr || date > maxDateStr) {
     return NextResponse.json({ error: 'Date out of booking window' }, { status: 400 })
@@ -103,9 +101,7 @@ export async function GET(request: NextRequest) {
 
   const bookedSet = new Set(bookings.map((b) => (b.slot as string).slice(0, 5)))
 
-  const now = new Date()
-  const isToday = date === now.toISOString().slice(0, 10)
-  const currentMinutes = now.getHours() * 60 + now.getMinutes()
+  const isToday = date === todayStr
   const cutoffMinutes = currentMinutes + 60
 
   const available: string[] = []
