@@ -232,7 +232,7 @@ export default function BookingPage() {
         )}
       </div>
 
-      <div className="flex flex-col sm:gap-3 pb-24">
+      <div className="border-t border-zinc-200 sm:border-t-0 flex flex-col sm:gap-3 pb-24">
       <Collapsible label="Book an Appointment">
         <div className="flex flex-col gap-8">
           {/* Date strip */}

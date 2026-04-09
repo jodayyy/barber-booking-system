@@ -7,7 +7,7 @@ const safeArea: React.CSSProperties = {
 
 function Footer() {
   return (
-    <p className="text-center text-xs text-zinc-400 py-4">
+    <p className="text-center text-xs text-zinc-400 pt-4">
       Powered by Sunsent Interactive
     </p>
   )
