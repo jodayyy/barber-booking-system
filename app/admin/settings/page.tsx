@@ -7,6 +7,7 @@ import { PageLayout } from '@/components/ui/PageLayout'
 import { Button } from '@/components/ui/Button'
 import { Collapsible } from '@/components/ui/Collapsible'
 import { Spinner } from '@/components/ui/Spinner'
+import { TimePicker } from '@/components/ui/TimePicker'
 
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -214,22 +215,18 @@ export default function AdminSettingsPage() {
 
             {!selectedDay.is_closed && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                <div className="min-w-0 overflow-hidden">
+                <div>
                   <label className="block text-xs font-medium text-zinc-500 mb-1.5">Opens at</label>
-                  <input
-                    type="time"
+                  <TimePicker
                     value={selectedDay.start_time.slice(0, 5)}
-                    onChange={(e) => updateDay(selectedDay.day_of_week, { start_time: e.target.value })}
-                    className="w-full min-w-0 max-w-full px-2 py-1.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white block"
+                    onChange={(v) => updateDay(selectedDay.day_of_week, { start_time: v })}
                   />
                 </div>
-                <div className="min-w-0 overflow-hidden">
+                <div>
                   <label className="block text-xs font-medium text-zinc-500 mb-1.5">Closes at</label>
-                  <input
-                    type="time"
+                  <TimePicker
                     value={selectedDay.end_time.slice(0, 5)}
-                    onChange={(e) => updateDay(selectedDay.day_of_week, { end_time: e.target.value })}
-                    className="w-full min-w-0 max-w-full px-2 py-1.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white block"
+                    onChange={(v) => updateDay(selectedDay.day_of_week, { end_time: v })}
                   />
                 </div>
               </div>
