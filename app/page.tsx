@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { getLocalDateString, formatSlot } from '@/lib/format'
 import { PageLayout } from '@/components/ui/PageLayout'
-import { PageHeader } from '@/components/ui/PageHeader'
 import { Collapsible } from '@/components/ui/Collapsible'
 import { SectionLabel } from '@/components/ui/SectionLabel'
 import { FormField } from '@/components/ui/FormField'
@@ -205,17 +204,42 @@ export default function BookingPage() {
     }
   }
 
+  const todayLabel = (() => {
+    const d = new Date()
+    const wd = d.toLocaleDateString('en-GB', { weekday: 'long' })
+    const day = d.getDate()
+    const mo = d.toLocaleDateString('en-GB', { month: 'long' })
+    return `${wd}, ${day} ${mo}`
+  })()
+
   return (
     <PageLayout>
-      <div className="px-4 pt-8 pb-6">
-        <PageHeader
-          title={shopName ? `Welcome to ${shopName}` : 'Welcome'}
-          isOpen={isOpen}
-          subtitle={hoursLabel ?? undefined}
-        />
+      {/* Full-width dark header — negative margin pulls it behind the notch in standalone mode */}
+      <div
+        className="bg-zinc-900 px-5 pb-7"
+        style={{
+          marginTop: 'calc(-1 * env(safe-area-inset-top))',
+          paddingTop: 'calc(env(safe-area-inset-top) + 1.75rem)',
+        }}
+      >
+        <p className="text-zinc-400 text-sm mb-1.5">{todayLabel}</p>
+        <h1 className="text-[1.6rem] font-bold text-white leading-tight mb-3">
+          {shopName ? `Welcome to ${shopName}` : 'Welcome'}
+        </h1>
+        {isOpen === null ? (
+          <div className="h-5 flex items-center"><Spinner /></div>
+        ) : (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`w-2 h-2 rounded-full shrink-0 ${isOpen ? 'bg-green-400' : 'bg-red-400'}`} />
+            <span className={`text-sm font-semibold ${isOpen ? 'text-green-400' : 'text-red-400'}`}>
+              {isOpen ? 'Open' : 'Closed'}
+            </span>
+            {hoursLabel && <span className="text-sm text-zinc-400">· {hoursLabel}</span>}
+          </div>
+        )}
       </div>
 
-      <div className="border-t border-zinc-200 sm:border-t-0 flex flex-col sm:gap-3 pb-24">
+      <div className="flex flex-col sm:gap-3 pb-24">
       <Collapsible label="Book an Appointment">
         <div className="flex flex-col gap-8">
           {/* Date strip */}
