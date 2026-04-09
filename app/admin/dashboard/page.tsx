@@ -531,13 +531,13 @@ export default function AdminDashboardPage() {
 
             {!editValues.is_closed && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                <div className="min-w-0 overflow-hidden">
+                <div>
                   <label className="block text-xs font-medium text-zinc-500 mb-1.5">Opens at</label>
                   <input
                     type="time"
                     value={editValues.start_time}
                     onChange={(e) => setEditValues((v) => v ? { ...v, start_time: e.target.value } : v)}
-                    className="w-full min-w-0 p-1 rounded-xl border border-zinc-200 mr-8"
+                    className="w-full min-w-0 p-1 rounded-xl border border-zinc-200"
                   />
                 </div>
                 <div className="min-w-0 overflow-hidden">
