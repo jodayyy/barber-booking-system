@@ -537,7 +537,7 @@ export default function AdminDashboardPage() {
                     type="time"
                     value={editValues.start_time}
                     onChange={(e) => setEditValues((v) => v ? { ...v, start_time: e.target.value } : v)}
-                    className="w-full"
+                    className="w-full border border-zinc-200"
                   />
                 </div>
                 <div className="min-w-0 overflow-hidden">
