@@ -1,6 +1,13 @@
+const safeArea: React.CSSProperties = {
+  paddingTop: 'env(safe-area-inset-top)',
+  paddingBottom: 'env(safe-area-inset-bottom)',
+  paddingLeft: 'env(safe-area-inset-left)',
+  paddingRight: 'env(safe-area-inset-right)',
+}
+
 function Footer() {
   return (
-    <p className="text-center text-xs text-zinc-400 py-8">
+    <p className="text-center text-xs text-zinc-400 py-4">
       Powered by Sunsent Interactive
     </p>
   )
@@ -14,7 +21,7 @@ interface PageLayoutProps {
 export function PageLayout({ children, centered = false }: PageLayoutProps) {
   if (centered) {
     return (
-      <div className="min-h-screen bg-zinc-50 flex flex-col">
+      <div className="min-h-screen bg-zinc-50 flex flex-col" style={safeArea}>
         <div className="flex-1 flex items-center justify-center px-4">
           <div className="w-full max-w-sm">{children}</div>
         </div>
@@ -23,7 +30,7 @@ export function PageLayout({ children, centered = false }: PageLayoutProps) {
     )
   }
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col">
+    <div className="min-h-screen bg-zinc-50 flex flex-col" style={safeArea}>
       <div className="flex-1 max-w-lg w-full mx-auto px-4 py-10">{children}</div>
       <Footer />
     </div>
