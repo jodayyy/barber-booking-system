@@ -531,22 +531,22 @@ export default function AdminDashboardPage() {
 
             {!editValues.is_closed && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                <div className="min-w-0">
+                <div className="min-w-0 overflow-hidden">
                   <label className="block text-xs font-medium text-zinc-500 mb-1.5">Opens at</label>
                   <input
                     type="time"
                     value={editValues.start_time}
                     onChange={(e) => setEditValues((v) => v ? { ...v, start_time: e.target.value } : v)}
-                    className="w-full min-w-0 max-w-full px-2 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
+                    className="w-full min-w-0 max-w-full px-2 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white block"
                   />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 overflow-hidden">
                   <label className="block text-xs font-medium text-zinc-500 mb-1.5">Closes at</label>
                   <input
                     type="time"
                     value={editValues.end_time}
                     onChange={(e) => setEditValues((v) => v ? { ...v, end_time: e.target.value } : v)}
-                    className="w-full min-w-0 max-w-full px-2 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
+                    className="w-full min-w-0 max-w-full px-2 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white block"
                   />
                 </div>
               </div>
