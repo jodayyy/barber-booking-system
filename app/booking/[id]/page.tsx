@@ -19,7 +19,8 @@ function buildWhatsAppLink(customerName: string, date: string, slot: string, id:
     `Time: ${formatSlot(slot)}`,
     `Booking: ${bookingUrl}`,
   ].join('\n')
-  return `https://wa.me/${shopPhone}?text=${encodeURIComponent(message)}`
+  const digits = shopPhone.replace(/\D/g, '')
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`
 }
 
 type Booking = {

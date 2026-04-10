@@ -7,43 +7,10 @@ import { PageLayout } from '@/components/ui/PageLayout'
 import { Collapsible } from '@/components/ui/Collapsible'
 import { SectionLabel } from '@/components/ui/SectionLabel'
 import { FormField } from '@/components/ui/FormField'
+import { PhoneField } from '@/components/ui/PhoneField'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 
-function LookupForm({
-  type,
-  value,
-  onChange,
-  placeholder,
-  onSubmit,
-  disabled,
-}: {
-  type: string
-  value: string
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  placeholder: string
-  onSubmit: () => void
-  disabled: boolean
-}) {
-  return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit() }} className="flex gap-2">
-      <input
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className="flex-1 px-4 py-3 rounded-xl border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-500 bg-white text-sm"
-      />
-      <button
-        type="submit"
-        disabled={disabled || !value.trim()}
-        className="px-5 py-3 rounded-xl bg-zinc-900 text-white font-semibold text-sm disabled:opacity-40 cursor-pointer transition-opacity"
-      >
-        Find
-      </button>
-    </form>
-  )
-}
 
 function generateDateRange(days: number): { dateStr: string; label: string; dayName: string }[] {
   const today = new Date()
@@ -354,14 +321,11 @@ export default function BookingPage() {
                   required
                   maxLength={100}
                 />
-                <FormField
+                <PhoneField
                   label="Phone Number"
-                  type="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="012 345 6789"
+                  onChange={setPhone}
                   required
-                  maxLength={20}
                 />
                 {submitError && (
                   <p className="text-red-500 text-sm">{submitError}</p>
@@ -377,14 +341,21 @@ export default function BookingPage() {
 
       <Collapsible label="Manage Booking">
         <div className="flex flex-col gap-4">
-          <LookupForm
-            type="tel"
-            value={managePhone}
-            onChange={(e) => setManagePhone(e.target.value)}
-            placeholder="Phone number"
-            onSubmit={() => handleManageLookup('phone', managePhone)}
-            disabled={manageLooking}
-          />
+          <form onSubmit={(e) => { e.preventDefault(); handleManageLookup('phone', managePhone) }} className="flex gap-2">
+            <div className="flex-1">
+              <PhoneField
+                value={managePhone}
+                onChange={setManagePhone}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={manageLooking || !managePhone.trim()}
+              className="px-5 py-3 rounded-xl bg-zinc-900 text-white font-semibold text-sm disabled:opacity-40 cursor-pointer transition-opacity"
+            >
+              Find
+            </button>
+          </form>
 
           {manageError && <p className="text-red-500 text-sm">{manageError}</p>}
         </div>

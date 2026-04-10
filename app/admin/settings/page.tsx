@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Collapsible } from '@/components/ui/Collapsible'
 import { Spinner } from '@/components/ui/Spinner'
 import { TimePicker } from '@/components/ui/TimePicker'
+import { PhoneField } from '@/components/ui/PhoneField'
 
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -150,17 +151,12 @@ export default function AdminSettingsPage() {
                 className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-zinc-500 mb-1.5">Phone Number</label>
-              <input
-                type="tel"
-                value={shopPhone}
-                onChange={(e) => { setShopPhone(e.target.value); setOwnerSaved(false); setOwnerError('') }}
-                placeholder="012 345 6789"
-                maxLength={30}
-                className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm focus:outline-none focus:border-zinc-500 bg-white"
-              />
-            </div>
+            <PhoneField
+              label="Phone Number"
+              value={shopPhone}
+              onChange={(v) => { setShopPhone(v); setOwnerSaved(false); setOwnerError('') }}
+              size="sm"
+            />
             {ownerError && <p className="text-red-500 text-sm">{ownerError}</p>}
             <Button onClick={handleOwnerSave} disabled={ownerSaving} size="sm" className="w-full">
               {ownerSaving ? 'Saving…' : ownerSaved ? 'Saved!' : 'Save'}
