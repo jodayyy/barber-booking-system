@@ -102,6 +102,7 @@ export default function AdminDashboardPage() {
   const [resetError, setResetError] = useState('')
   const [resetDone, setResetDone] = useState(false)
 
+  const [shopName, setShopName] = useState('')
   const [windowStart, setWindowStart] = useState(addDays(today, -2))
   const [dayCounts, setDayCounts] = useState<Record<string, number>>({})
 
@@ -154,12 +155,17 @@ export default function AdminDashboardPage() {
   }, [bookings, selectedDate])
 
   const loadSettings = useCallback(async () => {
-    const [scheduleRes, overridesRes] = await Promise.all([
+    const [scheduleRes, overridesRes, settingsRes] = await Promise.all([
       fetch('/api/admin/schedule'),
       fetch('/api/admin/date-overrides'),
+      fetch('/api/admin/settings'),
     ])
     if (scheduleRes.status === 401) { router.push('/admin/login'); return }
     if (scheduleRes.ok) setSchedule(await scheduleRes.json())
+    if (settingsRes.ok) {
+      const s = await settingsRes.json()
+      if (s.shop_name) setShopName(s.shop_name)
+    }
     if (overridesRes.ok) {
       const d: Array<{ date: string } & DateOverride> = await overridesRes.json()
       const map: Record<string, DateOverride> = {}
@@ -302,7 +308,7 @@ export default function AdminDashboardPage() {
       <div className="px-4 pt-6 pb-2">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-zinc-900">Dashboard</h1>
+            <h1 className="text-2xl font-bold text-zinc-900">{shopName ? `${shopName} Dashboard` : 'Dashboard'}</h1>
           </div>
           <div className="flex items-center gap-2">
             <Link
