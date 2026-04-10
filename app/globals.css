@@ -16,6 +16,11 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Prevent iOS Safari from auto-zooming on input focus */
+input, select, textarea {
+  font-size: 16px;
+}
+
 .scrollbar-none {
   scrollbar-width: none;
   -ms-overflow-style: none;
