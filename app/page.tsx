@@ -7,7 +7,6 @@ import { PageLayout } from '@/components/ui/PageLayout'
 import { Collapsible } from '@/components/ui/Collapsible'
 import { SectionLabel } from '@/components/ui/SectionLabel'
 import { FormField } from '@/components/ui/FormField'
-import { PhoneField } from '@/components/ui/PhoneField'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 
@@ -321,11 +320,14 @@ export default function BookingPage() {
                   required
                   maxLength={100}
                 />
-                <PhoneField
+                <FormField
                   label="Phone Number"
+                  type="tel"
                   value={phone}
-                  onChange={setPhone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="01X-XXX XXXX"
                   required
+                  maxLength={20}
                 />
                 {submitError && (
                   <p className="text-red-500 text-sm">{submitError}</p>
@@ -342,12 +344,14 @@ export default function BookingPage() {
       <Collapsible label="Manage Booking">
         <div className="flex flex-col gap-4">
           <form onSubmit={(e) => { e.preventDefault(); handleManageLookup('phone', managePhone) }} className="flex gap-2">
-            <div className="flex-1">
-              <PhoneField
-                value={managePhone}
-                onChange={setManagePhone}
-              />
-            </div>
+            <input
+              type="tel"
+              value={managePhone}
+              onChange={(e) => setManagePhone(e.target.value)}
+              placeholder="01X-XXX XXXX"
+              maxLength={20}
+              className="flex-1 px-4 py-3 rounded-xl border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-500 bg-white text-sm"
+            />
             <button
               type="submit"
               disabled={manageLooking || !managePhone.trim()}
