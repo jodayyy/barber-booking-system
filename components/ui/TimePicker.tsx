@@ -115,8 +115,8 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
               </button>
             </div>
 
-            {/* Drum-roll picker */}
-            <div className="px-4 pt-1 pb-2">
+            {/* Drum-roll picker — touch-action:none prevents iOS from scrolling the page during column drag */}
+            <div className="px-4 pt-1 pb-2" style={{ touchAction: 'none' }}>
               <Picker
                 value={local}
                 onChange={setLocal}
