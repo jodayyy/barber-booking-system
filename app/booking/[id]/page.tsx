@@ -9,19 +9,17 @@ import { BookingDetailRow } from '@/components/ui/BookingDetailRow'
 import { Button } from '@/components/ui/Button'
 import { ConfirmPanel } from '@/components/ui/ConfirmPanel'
 
-function buildWhatsAppLink(customerName: string, date: string, slot: string, id: string): string {
-  const ownerPhone = process.env.NEXT_PUBLIC_SHOP_WHATSAPP ?? ''
+function buildWhatsAppLink(customerName: string, date: string, slot: string, id: string, shopPhone: string, shopName: string): string {
   const bookingUrl = `${window.location.origin}/booking/${id}`
-  const shopName = process.env.NEXT_PUBLIC_BARBERSHOP_NAME ?? 'the barbershop'
   const message = [
-    `Hi ${shopName}, I booked a haircut appointment.`,
+    `Hi ${shopName || 'barbershop'}, I booked a haircut appointment.`,
     '',
     `Name: ${customerName}`,
     `Date: ${formatDate(date)}`,
     `Time: ${formatSlot(slot)}`,
     `Booking: ${bookingUrl}`,
   ].join('\n')
-  return `https://wa.me/${ownerPhone}?text=${encodeURIComponent(message)}`
+  return `https://wa.me/${shopPhone}?text=${encodeURIComponent(message)}`
 }
 
 type Booking = {
@@ -33,11 +31,17 @@ type Booking = {
   status: string
 }
 
+type Shop = {
+  shop_name?: string
+  shop_phone?: string
+}
+
 export default function BookingPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
 
   const [booking, setBooking] = useState<Booking | null>(null)
+  const [shop, setShop] = useState<Shop>({})
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
 
@@ -54,6 +58,7 @@ export default function BookingPage() {
           setNotFound(true)
         } else {
           setBooking(data.booking)
+          setShop(data.shop ?? {})
           if (data.booking.status === 'cancelled') setCancelled(true)
         }
       })
@@ -102,7 +107,7 @@ export default function BookingPage() {
     )
   }
 
-  const waLink = buildWhatsAppLink(booking.name, booking.date, booking.slot, booking.id)
+  const waLink = buildWhatsAppLink(booking.name, booking.date, booking.slot, booking.id, shop.shop_phone ?? '', shop.shop_name ?? '')
 
   return (
     <PageLayout>

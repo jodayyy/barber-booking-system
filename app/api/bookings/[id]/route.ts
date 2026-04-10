@@ -4,21 +4,31 @@ import { supabaseAdmin } from '@/lib/supabase'
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
-  const { data: booking, error } = await supabaseAdmin
-    .from('bookings')
-    .select('id, name, phone, date, slot, status')
-    .eq('id', id)
-    .maybeSingle()
+  const [bookingResult, settingsResult] = await Promise.all([
+    supabaseAdmin
+      .from('bookings')
+      .select('id, name, phone, date, slot, status')
+      .eq('id', id)
+      .maybeSingle(),
+    supabaseAdmin
+      .from('settings')
+      .select('key, value')
+      .in('key', ['shop_name', 'shop_phone']),
+  ])
 
-  if (error) {
+  if (bookingResult.error) {
     return NextResponse.json({ error: 'Failed to fetch booking' }, { status: 500 })
   }
 
-  if (!booking) {
+  if (!bookingResult.data) {
     return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
   }
 
-  return NextResponse.json({ booking })
+  const shop = Object.fromEntries(
+    (settingsResult.data ?? []).map((r) => [r.key, r.value])
+  )
+
+  return NextResponse.json({ booking: bookingResult.data, shop })
 }
 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
