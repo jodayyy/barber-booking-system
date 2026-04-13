@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Picker from 'react-mobile-picker'
+import { Icon } from '@/components/ui/Icon'
 
 const HOURS = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'))
 const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'))
@@ -81,10 +82,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
         className="w-full px-3 py-2.5 rounded-xl border border-zinc-200 text-zinc-900 text-sm bg-white focus:outline-none focus:border-zinc-500 flex items-center justify-between"
       >
         <span>{label}</span>
-        <svg className="w-4 h-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <circle cx="12" cy="12" r="9" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3 3" />
-        </svg>
+        <Icon name="clock" className="w-4 h-4 text-zinc-400" />
       </button>
 
       {open && (

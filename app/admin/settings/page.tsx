@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Collapsible } from '@/components/ui/Collapsible'
 import { Spinner } from '@/components/ui/Spinner'
 import { TimePicker } from '@/components/ui/TimePicker'
+import { Icon } from '@/components/ui/Icon'
 
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -120,9 +121,7 @@ export default function AdminSettingsPage() {
             className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400 transition-colors"
             aria-label="Back to dashboard"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
+            <Icon name="chevron-left" className="w-4 h-4" />
           </Link>
           <h1 className="text-2xl font-bold text-zinc-900">Settings</h1>
         </div>

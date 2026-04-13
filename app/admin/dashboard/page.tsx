@@ -11,6 +11,7 @@ import { Collapsible } from '@/components/ui/Collapsible'
 import { ConfirmPanel } from '@/components/ui/ConfirmPanel'
 import { Spinner } from '@/components/ui/Spinner'
 import { TimePicker } from '@/components/ui/TimePicker'
+import { Icon } from '@/components/ui/Icon'
 
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -312,23 +313,25 @@ export default function AdminDashboardPage() {
           </div>
           <div className="flex items-center gap-2">
             <Link
+              href="/"
+              className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400 transition-colors"
+              aria-label="View booking page"
+            >
+              <Icon name="home" className="w-4 h-4" />
+            </Link>
+            <Link
               href="/admin/settings"
               className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400 transition-colors"
               aria-label="Settings"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+              <Icon name="settings" className="w-4 h-4" />
             </Link>
             <button
               onClick={handleLogout}
               className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400 transition-colors cursor-pointer"
               aria-label="Logout"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
+              <Icon name="logout" className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -345,9 +348,7 @@ export default function AdminDashboardPage() {
             className="w-7 h-7 flex items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 disabled:opacity-30 hover:border-zinc-400 transition-colors cursor-pointer disabled:cursor-default shrink-0"
             aria-label="Previous week"
           >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
+            <Icon name="chevron-left" className="w-3.5 h-3.5" />
           </button>
 
           <div className="flex gap-1.5 flex-1">
@@ -388,9 +389,7 @@ export default function AdminDashboardPage() {
             className="w-7 h-7 flex items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 disabled:opacity-30 hover:border-zinc-400 transition-colors cursor-pointer disabled:cursor-default shrink-0"
             aria-label="Next week"
           >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
+            <Icon name="chevron-right" className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -453,10 +452,7 @@ export default function AdminDashboardPage() {
                           className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border border-red-300 text-red-500 hover:border-red-500 transition-colors cursor-pointer"
                           aria-label="Cancel booking"
                         >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <circle cx="12" cy="12" r="9" />
-                            <path strokeLinecap="round" d="M6.5 17.5l11-11" />
-                          </svg>
+                          <Icon name="cancel" className="w-4 h-4" />
                         </button>
                       )}
                       {booking.status === 'cancelled' && (
@@ -465,9 +461,7 @@ export default function AdminDashboardPage() {
                           className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border border-red-300 text-red-500 hover:border-red-500 transition-colors cursor-pointer"
                           aria-label="Delete booking"
                         >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-                          </svg>
+                          <Icon name="trash" className="w-4 h-4" />
                         </button>
                       )}
                     </>
