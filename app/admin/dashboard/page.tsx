@@ -283,6 +283,7 @@ export default function AdminDashboardPage() {
       }
     } finally {
       setCancelling(null)
+      setConfirmId(null)
     }
   }
 
@@ -294,6 +295,7 @@ export default function AdminDashboardPage() {
       if (res.ok) setBookings((prev) => prev.filter((b) => b.id !== id))
     } finally {
       setDeleting(null)
+      setConfirmId(null)
     }
   }
 
@@ -561,12 +563,13 @@ export default function AdminDashboardPage() {
                         onClick={() => {
                           if (confirmId.action === 'cancel') handleCancel(booking.id)
                           else handleDelete(booking.id)
-                          setConfirmId(null)
                         }}
                         disabled={cancelling === booking.id || deleting === booking.id}
-                        className="px-2.5 py-1 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors cursor-pointer disabled:opacity-40"
+                        className="px-2.5 py-1 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors cursor-pointer disabled:opacity-40 flex items-center justify-center min-w-[36px]"
                       >
-                        {cancelling === booking.id || deleting === booking.id ? '…' : 'Yes'}
+                        {cancelling === booking.id || deleting === booking.id
+                          ? <Spinner className="w-3 h-3" />
+                          : 'Yes'}
                       </button>
                       <button
                         onClick={() => setConfirmId(null)}
