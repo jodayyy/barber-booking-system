@@ -313,13 +313,6 @@ export default function AdminDashboardPage() {
           </div>
           <div className="flex items-center gap-2">
             <Link
-              href="/"
-              className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400 transition-colors"
-              aria-label="View booking page"
-            >
-              <Icon name="home" className="w-4 h-4" />
-            </Link>
-            <Link
               href="/admin/settings"
               className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400 transition-colors"
               aria-label="Settings"
@@ -584,6 +577,16 @@ export default function AdminDashboardPage() {
           )}
         </div>
       </Collapsible>
+      </div>
+
+      <div className="fixed bottom-6 right-6">
+        <Link
+          href="/"
+          className="w-12 h-12 flex items-center justify-center rounded-full bg-zinc-200 text-zinc-500 shadow-sm hover:bg-zinc-300 transition-colors"
+          aria-label="View booking page"
+        >
+          <Icon name="home" className="w-5 h-5" />
+        </Link>
       </div>
     </PageLayout>
   )
