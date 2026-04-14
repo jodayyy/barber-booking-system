@@ -556,6 +556,13 @@ export default function AdminDashboardPage() {
 
                   {confirmId?.id === booking.id ? (
                     <div className="flex items-center gap-1.5 shrink-0">
+                      <a
+                        href={`whatsapp://send?phone=6${booking.phone.replace(/\D/g, '')}`}
+                        className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border border-green-300 text-green-500 hover:border-green-500 transition-colors"
+                        aria-label="WhatsApp"
+                      >
+                        <Icon name="whatsapp" className="w-4 h-4" />
+                      </a>
                       <span className="text-xs font-medium text-zinc-500">
                         {confirmId.action === 'cancel' ? 'Cancel?' : 'Delete?'}
                       </span>
@@ -579,7 +586,14 @@ export default function AdminDashboardPage() {
                       </button>
                     </div>
                   ) : (
-                    <>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <a
+                        href={`whatsapp://send?phone=6${booking.phone.replace(/\D/g, '')}`}
+                        className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border border-green-300 text-green-500 hover:border-green-500 transition-colors"
+                        aria-label="WhatsApp"
+                      >
+                        <Icon name="whatsapp" className="w-4 h-4" />
+                      </a>
                       {booking.status === 'active' && (
                         <button
                           onClick={() => setConfirmId({ id: booking.id, action: 'cancel' })}
@@ -598,7 +612,7 @@ export default function AdminDashboardPage() {
                           <Icon name="trash" className="w-4 h-4" />
                         </button>
                       )}
-                    </>
+                    </div>
                   )}
                 </Card>
               </li>
