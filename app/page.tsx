@@ -368,7 +368,7 @@ export default function BookingPage() {
       <div className="fixed bottom-6 right-6 flex flex-col gap-2">
         {shopPhone && (
           <a
-            href={`https://wa.me/${shopPhone}`}
+            href={`whatsapp://send?phone=6${shopPhone?.replace(/\D/g, '')}`}
             target="_blank"
             rel="noopener noreferrer"
             className="w-12 h-12 flex items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg hover:bg-[#1ebe5d] transition-colors"
