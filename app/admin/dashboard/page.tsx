@@ -96,6 +96,7 @@ export default function AdminDashboardPage() {
   const [pastBookings, setPastBookings] = useState<{ date: string; bookings: Booking[] }[]>([])
   const [pastLoading, setPastLoading] = useState(false)
   const [deletingPast, setDeletingPast] = useState<string | null>(null)
+  const [confirmPastId, setConfirmPastId] = useState<string | null>(null)
 
   // — Shop hours —
   const [schedule, setSchedule] = useState<ScheduleItem[]>([])
@@ -268,6 +269,7 @@ export default function AdminDashboardPage() {
       }
     } finally {
       setDeletingPast(null)
+      setConfirmPastId(null)
     }
   }
 
@@ -451,17 +453,37 @@ export default function AdminDashboardPage() {
                             </div>
                             <p className="text-sm text-zinc-500">{formatSlot(booking.slot.slice(0, 5))}</p>
                           </div>
-                          <button
-                            onClick={() => handleDeletePast(booking.id)}
-                            disabled={deletingPast === booking.id}
-                            className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border border-red-300 text-red-500 hover:border-red-500 transition-colors cursor-pointer disabled:opacity-40"
-                            aria-label="Delete booking"
-                          >
-                            {deletingPast === booking.id
-                              ? <Spinner />
-                              : <Icon name="trash" className="w-4 h-4" />
-                            }
-                          </button>
+                          {confirmPastId === booking.id ? (
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {deletingPast === booking.id ? (
+                                <Spinner className="w-4 h-4" />
+                              ) : (
+                                <>
+                                  <span className="text-xs font-medium text-zinc-500">Delete?</span>
+                                  <button
+                                    onClick={() => handleDeletePast(booking.id)}
+                                    className="px-2.5 py-1 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors cursor-pointer flex items-center justify-center min-w-[36px]"
+                                  >
+                                    Yes
+                                  </button>
+                                  <button
+                                    onClick={() => setConfirmPastId(null)}
+                                    className="px-2.5 py-1 rounded-lg border border-zinc-200 text-zinc-500 text-xs font-medium hover:border-zinc-400 transition-colors cursor-pointer"
+                                  >
+                                    No
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmPastId(booking.id)}
+                              className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border border-red-300 text-red-500 hover:border-red-500 transition-colors cursor-pointer"
+                              aria-label="Delete booking"
+                            >
+                              <Icon name="trash" className="w-4 h-4" />
+                            </button>
+                          )}
                         </Card>
                       </li>
                     ))}

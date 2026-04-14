@@ -19,10 +19,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
   }
 
-  if (booking.status !== 'cancelled') {
-    return NextResponse.json({ error: 'Only cancelled bookings can be deleted' }, { status: 400 })
-  }
-
   const { error } = await supabaseAdmin
     .from('bookings')
     .delete()
