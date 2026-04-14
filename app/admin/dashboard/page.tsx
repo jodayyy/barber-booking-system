@@ -556,34 +556,37 @@ export default function AdminDashboardPage() {
 
                   {confirmId?.id === booking.id ? (
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <a
-                        href={`whatsapp://send?phone=6${booking.phone.replace(/\D/g, '')}`}
-                        className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border border-green-300 text-green-500 hover:border-green-500 transition-colors"
-                        aria-label="WhatsApp"
-                      >
-                        <Icon name="whatsapp" className="w-4 h-4" />
-                      </a>
-                      <span className="text-xs font-medium text-zinc-500">
-                        {confirmId.action === 'cancel' ? 'Cancel?' : 'Delete?'}
-                      </span>
-                      <button
-                        onClick={() => {
-                          if (confirmId.action === 'cancel') handleCancel(booking.id)
-                          else handleDelete(booking.id)
-                        }}
-                        disabled={cancelling === booking.id || deleting === booking.id}
-                        className="px-2.5 py-1 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors cursor-pointer disabled:opacity-40 flex items-center justify-center min-w-[36px]"
-                      >
-                        {cancelling === booking.id || deleting === booking.id
-                          ? <Spinner className="w-3 h-3" />
-                          : 'Yes'}
-                      </button>
-                      <button
-                        onClick={() => setConfirmId(null)}
-                        className="px-2.5 py-1 rounded-lg border border-zinc-200 text-zinc-500 text-xs font-medium hover:border-zinc-400 transition-colors cursor-pointer"
-                      >
-                        No
-                      </button>
+                      {cancelling === booking.id || deleting === booking.id ? (
+                        <Spinner className="w-4 h-4" />
+                      ) : (
+                        <>
+                          <a
+                            href={`whatsapp://send?phone=6${booking.phone.replace(/\D/g, '')}`}
+                            className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border border-green-300 text-green-500 hover:border-green-500 transition-colors"
+                            aria-label="WhatsApp"
+                          >
+                            <Icon name="whatsapp" className="w-4 h-4" />
+                          </a>
+                          <span className="text-xs font-medium text-zinc-500">
+                            {confirmId.action === 'cancel' ? 'Cancel?' : 'Delete?'}
+                          </span>
+                          <button
+                            onClick={() => {
+                              if (confirmId.action === 'cancel') handleCancel(booking.id)
+                              else handleDelete(booking.id)
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors cursor-pointer flex items-center justify-center min-w-[36px]"
+                          >
+                            Yes
+                          </button>
+                          <button
+                            onClick={() => setConfirmId(null)}
+                            className="px-2.5 py-1 rounded-lg border border-zinc-200 text-zinc-500 text-xs font-medium hover:border-zinc-400 transition-colors cursor-pointer"
+                          >
+                            No
+                          </button>
+                        </>
+                      )}
                     </div>
                   ) : (
                     <div className="flex items-center gap-1.5 shrink-0">
