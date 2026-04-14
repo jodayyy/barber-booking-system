@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getLocalDateString, formatSlot, formatDateHeading } from '@/lib/format'
@@ -91,6 +91,12 @@ export default function AdminDashboardPage() {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [confirmId, setConfirmId] = useState<{ id: string; action: 'cancel' | 'delete' } | null>(null)
 
+  // — Past bookings —
+  const [showPast, setShowPast] = useState(false)
+  const [pastBookings, setPastBookings] = useState<{ date: string; bookings: Booking[] }[]>([])
+  const [pastLoading, setPastLoading] = useState(false)
+  const [deletingPast, setDeletingPast] = useState<string | null>(null)
+
   // — Shop hours —
   const [schedule, setSchedule] = useState<ScheduleItem[]>([])
   const [overrides, setOverrides] = useState<Record<string, DateOverride>>({})
@@ -104,20 +110,41 @@ export default function AdminDashboardPage() {
   const [resetDone, setResetDone] = useState(false)
 
   const [shopName, setShopName] = useState('')
-  const [windowStart, setWindowStart] = useState(addDays(today, -2))
+  const [bookingWindow, setBookingWindow] = useState(14)
   const [dayCounts, setDayCounts] = useState<Record<string, number>>({})
+
+  const allDates = getDaysFrom(today, bookingWindow)
+
+  const dateScrollRef = useRef<HTMLDivElement | null>(null)
+  const [scrollMounted, setScrollMounted] = useState(false)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+
+  const scrollRefCallback = useCallback((el: HTMLDivElement | null) => {
+    dateScrollRef.current = el
+    setScrollMounted(!!el)
+  }, [])
+
+  function updateScrollButtons() {
+    const el = dateScrollRef.current
+    if (!el) return
+    setCanScrollLeft(el.scrollLeft > 0)
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
+  }
 
   const days = getUpcoming7Days()
 
   const fetchBookings = useCallback(async (date: string) => {
     setLoading(true)
     setError('')
+    setBookings([])
     try {
       const res = await fetch(`/api/admin/bookings?date=${date}`)
       if (res.status === 401) { router.push('/admin/login'); return }
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Failed to load bookings'); return }
       setBookings(data)
+      setDayCounts((prev) => ({ ...prev, [date]: data.filter((b: Booking) => b.status === 'active').length }))
     } catch {
       setError('Failed to load bookings')
     } finally {
@@ -125,8 +152,8 @@ export default function AdminDashboardPage() {
     }
   }, [router])
 
-  const fetchDayCounts = useCallback(async (start: string) => {
-    const dates = getDaysFrom(start, 5).map((d) => d.dateStr)
+  const fetchDayCounts = useCallback(async (window: number) => {
+    const dates = getDaysFrom(today, window).map((d) => d.dateStr)
     const results = await Promise.all(
       dates.map(async (date) => {
         try {
@@ -147,25 +174,31 @@ export default function AdminDashboardPage() {
   }, [])
 
   useEffect(() => { fetchBookings(selectedDate) }, [selectedDate, fetchBookings])
-  useEffect(() => { fetchDayCounts(windowStart) }, [windowStart, fetchDayCounts])
+  useEffect(() => { fetchDayCounts(bookingWindow) }, [fetchDayCounts, bookingWindow])
   useEffect(() => {
-    setDayCounts((prev) => ({
-      ...prev,
-      [selectedDate]: bookings.filter((b) => b.status === 'active').length,
-    }))
-  }, [bookings, selectedDate])
+    const el = dateScrollRef.current
+    if (!el) return
+    updateScrollButtons()
+    el.addEventListener('scroll', updateScrollButtons)
+    return () => el.removeEventListener('scroll', updateScrollButtons)
+  }, [scrollMounted])
 
   const loadSettings = useCallback(async () => {
-    const [scheduleRes, overridesRes, settingsRes] = await Promise.all([
+    const [scheduleRes, overridesRes, settingsRes, statusRes] = await Promise.all([
       fetch('/api/admin/schedule'),
       fetch('/api/admin/date-overrides'),
       fetch('/api/admin/settings'),
+      fetch('/api/status'),
     ])
     if (scheduleRes.status === 401) { router.push('/admin/login'); return }
     if (scheduleRes.ok) setSchedule(await scheduleRes.json())
     if (settingsRes.ok) {
       const s = await settingsRes.json()
       if (s.shop_name) setShopName(s.shop_name)
+    }
+    if (statusRes.ok) {
+      const s = await statusRes.json()
+      setBookingWindow(s.bookingWindow ?? 14)
     }
     if (overridesRes.ok) {
       const d: Array<{ date: string } & DateOverride> = await overridesRes.json()
@@ -196,6 +229,47 @@ export default function AdminDashboardPage() {
       : { start_time: '10:00', end_time: '22:00', is_closed: false }
     )
   }, [selectedOverrideDate, overrides, schedule])
+
+  async function fetchPastBookings() {
+    setPastLoading(true)
+    const dates = [1, 2, 3].map((n) => addDays(today, -n))
+    const results = await Promise.all(
+      dates.map(async (date) => {
+        try {
+          const res = await fetch(`/api/admin/bookings?date=${date}`)
+          if (!res.ok) return { date, bookings: [] }
+          const data: Booking[] = await res.json()
+          return { date, bookings: data }
+        } catch {
+          return { date, bookings: [] }
+        }
+      })
+    )
+    setPastBookings(results.filter((r) => r.bookings.length > 0))
+    setPastLoading(false)
+  }
+
+  async function handleTogglePast() {
+    if (showPast) { setShowPast(false); return }
+    setShowPast(true)
+    await fetchPastBookings()
+  }
+
+  async function handleDeletePast(id: string) {
+    setDeletingPast(id)
+    try {
+      const res = await fetch(`/api/admin/bookings/${id}`, { method: 'DELETE' })
+      if (res.status === 401) { router.push('/admin/login'); return }
+      if (res.ok) {
+        setPastBookings((prev) =>
+          prev.map((g) => ({ ...g, bookings: g.bookings.filter((b) => b.id !== id) }))
+            .filter((g) => g.bookings.length > 0)
+        )
+      }
+    } finally {
+      setDeletingPast(null)
+    }
+  }
 
   async function handleCancel(id: string) {
     setCancelling(id)
@@ -300,9 +374,6 @@ export default function AdminDashboardPage() {
     return { hasOverride: false, isClosed: !def || def.is_closed }
   }
 
-  const canWindowPrev = windowStart > addDays(today, -7)
-  const canWindowNext = windowStart < addDays(today, 3)
-
   return (
     <PageLayout>
       {/* Header */}
@@ -332,27 +403,94 @@ export default function AdminDashboardPage() {
 
       <div className="border-t border-zinc-200 sm:border-t-0 flex flex-col sm:gap-4 pb-8">
       {/* Bookings */}
-      <Collapsible label="Bookings" defaultOpen>
-        {/* Date strip */}
-        <div className="flex items-center gap-1.5 mb-4">
+      <Collapsible
+        label="Bookings"
+        defaultOpen
+        action={
           <button
-            onClick={() => { const s = addDays(windowStart, -5); setWindowStart(s); setSelectedDate(addDays(s, 4)) }}
-            disabled={!canWindowPrev}
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 disabled:opacity-30 hover:border-zinc-400 transition-colors cursor-pointer disabled:cursor-default shrink-0"
-            aria-label="Previous week"
+            onClick={handleTogglePast}
+            className={`w-7 h-7 flex items-center justify-center rounded-lg border transition-colors cursor-pointer ${
+              showPast
+                ? 'bg-zinc-900 border-zinc-900 text-white'
+                : 'border-zinc-200 text-zinc-400 hover:border-zinc-400'
+            }`}
+            aria-label="Past bookings"
           >
-            <Icon name="chevron-left" className="w-3.5 h-3.5" />
+            <Icon name="clock" className="w-3.5 h-3.5" />
           </button>
+        }
+      >
+        {/* Past bookings panel */}
+        <div
+          className="grid transition-[grid-template-rows] duration-300 ease-in-out"
+          style={{ gridTemplateRows: showPast ? '1fr' : '0fr' }}
+        >
+          <div className="overflow-hidden">
+            <div className="mb-5">
+              {pastLoading && (
+                <div className="flex justify-center py-4"><Spinner /></div>
+              )}
+              {!pastLoading && pastBookings.length === 0 && (
+                <p className="text-zinc-400 text-sm text-center py-4">No bookings in the past 3 days.</p>
+              )}
+              {!pastLoading && pastBookings.map(({ date, bookings: group }) => (
+                <div key={date} className="mb-4">
+                  <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">{formatDateHeading(date)}</p>
+                  <ul className="flex flex-col gap-2">
+                    {group.map((booking) => (
+                      <li key={booking.id}>
+                        <Card className={`px-4 py-3 flex items-center justify-between gap-4 ${booking.status === 'cancelled' ? 'border-zinc-100' : ''}`}>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-sm font-semibold text-zinc-900 truncate">{booking.name}</span>
+                              {booking.status === 'cancelled' && (
+                                <span className="text-xs text-zinc-400 font-medium shrink-0">Cancelled</span>
+                              )}
+                            </div>
+                            <p className="text-sm text-zinc-500">{formatSlot(booking.slot.slice(0, 5))}</p>
+                          </div>
+                          <button
+                            onClick={() => handleDeletePast(booking.id)}
+                            disabled={deletingPast === booking.id}
+                            className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full border border-red-300 text-red-500 hover:border-red-500 transition-colors cursor-pointer disabled:opacity-40"
+                            aria-label="Delete booking"
+                          >
+                            {deletingPast === booking.id
+                              ? <Spinner />
+                              : <Icon name="trash" className="w-4 h-4" />
+                            }
+                          </button>
+                        </Card>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+              <div className="border-t border-zinc-100" />
+            </div>
+          </div>
+        </div>
 
-          <div className="flex gap-1.5 flex-1">
-            {getDaysFrom(windowStart, 5).map(({ dateStr, dayNum, dayName }) => {
+        {/* Date strip */}
+        <div className="relative mb-4">
+          {canScrollLeft && (
+            <button
+              onClick={() => dateScrollRef.current?.scrollBy({ left: -180, behavior: 'smooth' })}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400 cursor-pointer"
+              aria-label="Scroll left"
+            >
+              <Icon name="chevron-left" className="w-4 h-4" />
+            </button>
+          )}
+          <div ref={scrollRefCallback} className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {allDates.map(({ dateStr, dayNum, dayName }) => {
               const isSelected = selectedDate === dateStr
               const isToday = dateStr === today
               return (
                 <button
                   key={dateStr}
                   onClick={() => setSelectedDate(dateStr)}
-                  className={`flex flex-col items-center flex-1 py-2.5 rounded-xl border text-sm transition-colors cursor-pointer ${
+                  className={`flex flex-col items-center min-w-[52px] py-2.5 rounded-xl border text-sm transition-colors cursor-pointer ${
                     isSelected
                       ? 'bg-zinc-900 border-zinc-900 text-white'
                       : 'bg-white border-zinc-200 text-zinc-700 hover:border-zinc-400'
@@ -375,15 +513,15 @@ export default function AdminDashboardPage() {
               )
             })}
           </div>
-
-          <button
-            onClick={() => { const s = addDays(windowStart, 5); setWindowStart(s); setSelectedDate(s) }}
-            disabled={!canWindowNext}
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 disabled:opacity-30 hover:border-zinc-400 transition-colors cursor-pointer disabled:cursor-default shrink-0"
-            aria-label="Next week"
-          >
-            <Icon name="chevron-right" className="w-3.5 h-3.5" />
-          </button>
+          {canScrollRight && (
+            <button
+              onClick={() => dateScrollRef.current?.scrollBy({ left: 180, behavior: 'smooth' })}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400 cursor-pointer"
+              aria-label="Scroll right"
+            >
+              <Icon name="chevron-right" className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Booking list */}
