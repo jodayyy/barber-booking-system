@@ -3,12 +3,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { PageLayout } from '@/components/ui/PageLayout'
-import { Button } from '@/components/ui/Button'
-import { Collapsible } from '@/components/ui/Collapsible'
-import { Spinner } from '@/components/ui/Spinner'
-import { TimePicker } from '@/components/ui/TimePicker'
-import { Icon } from '@/components/ui/Icon'
+import { PageLayout } from '@/components/PageLayout'
+import { Button } from '@/components/Button'
+import { Collapsible } from '@/components/Collapsible'
+import { Spinner } from '@/components/Spinner'
+import { TimePicker } from '@/components/TimePicker'
+import { Icon } from '@/components/Icon'
 
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -35,12 +35,13 @@ export default function AdminSettingsPage() {
   const [ownerSaved, setOwnerSaved] = useState(false)
   const [ownerError, setOwnerError] = useState('')
 
+  // Loads the weekly schedule and shop settings in parallel on mount
   const load = useCallback(async () => {
     const [schedRes, settingsRes] = await Promise.all([
       fetch('/api/admin/schedule'),
       fetch('/api/admin/settings'),
     ])
-    if (schedRes.status === 401 || settingsRes.status === 401) { router.push('/admin/login'); return }
+    if (schedRes.status === 401 || settingsRes.status === 401) { router.push('/login'); return }
     if (schedRes.ok) {
       const data: DaySchedule[] = await schedRes.json()
       setSchedule(data.map((d) => ({
@@ -68,7 +69,7 @@ export default function AdminSettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ shop_name: shopName, shop_phone: shopPhone }),
       })
-      if (res.status === 401) { router.push('/admin/login'); return }
+      if (res.status === 401) { router.push('/login'); return }
       if (!res.ok) {
         const d = await res.json()
         setOwnerError(d.error ?? 'Failed to save')
@@ -96,7 +97,7 @@ export default function AdminSettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(schedule),
       })
-      if (res.status === 401) { router.push('/admin/login'); return }
+      if (res.status === 401) { router.push('/login'); return }
       if (!res.ok) {
         const d = await res.json()
         setSaveError(d.error ?? 'Failed to save')
@@ -117,7 +118,7 @@ export default function AdminSettingsPage() {
       <div className="px-4 pt-6 pb-2">
         <div className="flex items-center gap-3">
           <Link
-            href="/admin/dashboard"
+            href="/dashboard"
             className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400 transition-colors"
             aria-label="Back to dashboard"
           >

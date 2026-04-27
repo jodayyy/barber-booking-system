@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
   const dates = raw.split(',').filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
   if (dates.length === 0) return NextResponse.json({})
 
+  // Fetch overrides and weekly schedule in parallel, then resolve each date's availability
   const [{ data: overrides }, { data: schedule }] = await Promise.all([
     supabaseAdmin
       .from('date_overrides')

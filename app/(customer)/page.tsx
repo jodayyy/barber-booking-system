@@ -2,14 +2,14 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { getLocalDateString, formatSlot } from '@/lib/format'
-import { PageLayout } from '@/components/ui/PageLayout'
-import { Collapsible } from '@/components/ui/Collapsible'
-import { SectionLabel } from '@/components/ui/SectionLabel'
-import { FormField } from '@/components/ui/FormField'
-import { Button } from '@/components/ui/Button'
-import { Spinner } from '@/components/ui/Spinner'
-import { Icon } from '@/components/ui/Icon'
+import { getLocalDateString, formatSlot } from '@/lib/utils'
+import { PageLayout } from '@/components/PageLayout'
+import { Collapsible } from '@/components/Collapsible'
+import { SectionLabel } from '@/components/SectionLabel'
+import { FormField } from '@/components/FormField'
+import { Button } from '@/components/Button'
+import { Spinner } from '@/components/Spinner'
+import { Icon } from '@/components/Icon'
 
 
 function generateDateRange(days: number): { dateStr: string; label: string; dayName: string }[] {
@@ -58,8 +58,9 @@ export default function BookingPage() {
   const [shopName, setShopName] = useState<string | null>(null)
   const [shopPhone, setShopPhone] = useState<string | null>(null)
 
+  // On mount: fetch shop open/closed status, booking window length, and shop contact info
   useEffect(() => {
-    fetch('/api/status')
+    fetch('/api/customer/status')
       .then((r) => r.json())
       .then((d) => {
         setIsOpen(d.open)
@@ -81,9 +82,10 @@ export default function BookingPage() {
 
   const [availability, setAvailability] = useState<Record<string, boolean>>({})
 
+  // Batch-fetches availability for all dates at once — powers the green/red dots on the date strip
   useEffect(() => {
     if (dates.length === 0) return
-    fetch(`/api/availability?dates=${dates.map((d) => d.dateStr).join(',')}`)
+    fetch(`/api/customer/availability?dates=${dates.map((d) => d.dateStr).join(',')}`)
       .then((r) => r.json())
       .then(setAvailability)
       .catch(() => {})
@@ -105,6 +107,7 @@ export default function BookingPage() {
   const [manageError, setManageError] = useState('')
   const [manageLooking, setManageLooking] = useState(false)
 
+  // Fetches available and already-booked slots whenever the selected date changes
   useEffect(() => {
     if (!selectedDate) return
     setSlotsLoading(true)
@@ -114,7 +117,7 @@ export default function BookingPage() {
     setSelectedSlot('')
     setBookedSlotClicked('')
 
-    fetch(`/api/slots?date=${selectedDate}`)
+    fetch(`/api/customer/slots?date=${selectedDate}`)
       .then((r) => r.json())
       .then((data) => {
         if (data.error) setSlotsError(data.error)
@@ -135,7 +138,7 @@ export default function BookingPage() {
     setSubmitError('')
 
     try {
-      const res = await fetch('/api/bookings', {
+      const res = await fetch('/api/customer/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -158,11 +161,12 @@ export default function BookingPage() {
     }
   }
 
+  // Looks up the most recent active booking by phone number and redirects to its detail page
   async function handleManageLookup(param: 'phone' | 'code', value: string) {
     setManageError('')
     setManageLooking(true)
     try {
-      const res = await fetch(`/api/bookings/lookup?${param}=${encodeURIComponent(value.trim())}`)
+      const res = await fetch(`/api/customer/bookings/lookup?${param}=${encodeURIComponent(value.trim())}`)
       const data = await res.json()
       if (!res.ok) { setManageError(data.error ?? 'Not found'); return }
       window.location.href = `/booking/${data.id}`
@@ -389,7 +393,7 @@ export default function BookingPage() {
           </a>
         )}
         <a
-          href="/admin/dashboard"
+          href="/dashboard"
           className="w-12 h-12 flex items-center justify-center rounded-full bg-zinc-200 text-zinc-500 shadow-sm hover:bg-zinc-300 transition-colors"
           aria-label="Admin"
         >

@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { formatDate, formatSlot } from '@/lib/format'
-import { PageLayout } from '@/components/ui/PageLayout'
-import { Card } from '@/components/ui/Card'
-import { BookingDetailRow } from '@/components/ui/BookingDetailRow'
-import { Button } from '@/components/ui/Button'
-import { ConfirmPanel } from '@/components/ui/ConfirmPanel'
-import { Spinner } from '@/components/ui/Spinner'
-import { Icon } from '@/components/ui/Icon'
+import { formatDate, formatSlot } from '@/lib/utils'
+import { PageLayout } from '@/components/PageLayout'
+import { Card } from '@/components/Card'
+import { BookingDetailRow } from '@/components/BookingDetailRow'
+import { Button } from '@/components/Button'
+import { ConfirmPanel } from '@/components/ConfirmPanel'
+import { Spinner } from '@/components/Spinner'
+import { Icon } from '@/components/Icon'
 
+// Builds a deep-link that opens WhatsApp with a pre-filled message containing the booking details
 function buildWhatsAppLink(customerName: string, date: string, slot: string, id: string, shopPhone: string, shopName: string): string {
   const bookingUrl = `${window.location.origin}/booking/${id}`
   const message = [
@@ -53,8 +54,9 @@ export default function BookingPage() {
   const [cancelError, setCancelError] = useState('')
   const [confirmOpen, setConfirmOpen] = useState(false)
 
+  // Fetches booking details and shop info (name, phone) together from the API
   useEffect(() => {
-    fetch(`/api/bookings/${id}`)
+    fetch(`/api/customer/bookings/${id}`)
       .then((r) => r.json())
       .then((data) => {
         if (data.error || !data.booking) {
@@ -73,7 +75,7 @@ export default function BookingPage() {
     setCancelling(true)
     setCancelError('')
     try {
-      const res = await fetch(`/api/bookings/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/customer/bookings/${id}`, { method: 'DELETE' })
       const data = await res.json()
       if (!res.ok) {
         setCancelError(data.error ?? 'Failed to cancel booking.')

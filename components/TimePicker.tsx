@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Picker from 'react-mobile-picker'
-import { Icon } from '@/components/ui/Icon'
+import { Icon } from '@/components/Icon'
 
 const HOURS = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'))
 const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'))

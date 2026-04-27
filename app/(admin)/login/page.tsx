@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { PageLayout } from '@/components/ui/PageLayout'
-import { PageHeader } from '@/components/ui/PageHeader'
-import { FormField } from '@/components/ui/FormField'
-import { Button } from '@/components/ui/Button'
+import { PageLayout } from '@/components/PageLayout'
+import { PageHeader } from '@/components/PageHeader'
+import { FormField } from '@/components/FormField'
+import { Button } from '@/components/Button'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -29,7 +29,7 @@ export default function AdminLoginPage() {
       })
 
       if (res.ok) {
-        router.push('/admin/dashboard')
+        router.push('/dashboard')
       } else {
         const data = await res.json()
         setError(data.error ?? 'Login failed')

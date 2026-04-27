@@ -4,6 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase'
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
+  // Fetch booking details and shop settings in parallel
   const [bookingResult, settingsResult] = await Promise.all([
     supabaseAdmin
       .from('bookings')

@@ -3,15 +3,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getLocalDateString, formatSlot, formatDateHeading } from '@/lib/format'
-import { PageLayout } from '@/components/ui/PageLayout'
-import { Card } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
-import { Collapsible } from '@/components/ui/Collapsible'
-import { ConfirmPanel } from '@/components/ui/ConfirmPanel'
-import { Spinner } from '@/components/ui/Spinner'
-import { TimePicker } from '@/components/ui/TimePicker'
-import { Icon } from '@/components/ui/Icon'
+import { getLocalDateString, formatSlot, formatDateHeading } from '@/lib/utils'
+import { PageLayout } from '@/components/PageLayout'
+import { Card } from '@/components/Card'
+import { Button } from '@/components/Button'
+import { Collapsible } from '@/components/Collapsible'
+import { ConfirmPanel } from '@/components/ConfirmPanel'
+import { Spinner } from '@/components/Spinner'
+import { TimePicker } from '@/components/TimePicker'
+import { Icon } from '@/components/Icon'
 
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -135,13 +135,14 @@ export default function AdminDashboardPage() {
 
   const days = getUpcoming7Days()
 
+  // Loads bookings for the selected date and updates the count badge on that date button
   const fetchBookings = useCallback(async (date: string) => {
     setLoading(true)
     setError('')
     setBookings([])
     try {
       const res = await fetch(`/api/admin/bookings?date=${date}`)
-      if (res.status === 401) { router.push('/admin/login'); return }
+      if (res.status === 401) { router.push('/login'); return }
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Failed to load bookings'); return }
       setBookings(data)
@@ -153,6 +154,7 @@ export default function AdminDashboardPage() {
     }
   }, [router])
 
+  // Pre-fetches active booking counts for all dates in the booking window (powers the count badges)
   const fetchDayCounts = useCallback(async (window: number) => {
     const dates = getDaysFrom(today, window).map((d) => d.dateStr)
     const results = await Promise.all(
@@ -184,14 +186,15 @@ export default function AdminDashboardPage() {
     return () => el.removeEventListener('scroll', updateScrollButtons)
   }, [scrollMounted])
 
+  // Loads schedule, date overrides, shop settings, and booking window in parallel on mount
   const loadSettings = useCallback(async () => {
     const [scheduleRes, overridesRes, settingsRes, statusRes] = await Promise.all([
       fetch('/api/admin/schedule'),
       fetch('/api/admin/date-overrides'),
       fetch('/api/admin/settings'),
-      fetch('/api/status'),
+      fetch('/api/customer/status'),
     ])
-    if (scheduleRes.status === 401) { router.push('/admin/login'); return }
+    if (scheduleRes.status === 401) { router.push('/login'); return }
     if (scheduleRes.ok) setSchedule(await scheduleRes.json())
     if (settingsRes.ok) {
       const s = await settingsRes.json()
@@ -260,7 +263,7 @@ export default function AdminDashboardPage() {
     setDeletingPast(id)
     try {
       const res = await fetch(`/api/admin/bookings/${id}`, { method: 'DELETE' })
-      if (res.status === 401) { router.push('/admin/login'); return }
+      if (res.status === 401) { router.push('/login'); return }
       if (res.ok) {
         setPastBookings((prev) =>
           prev.map((g) => ({ ...g, bookings: g.bookings.filter((b) => b.id !== id) }))
@@ -276,8 +279,8 @@ export default function AdminDashboardPage() {
   async function handleCancel(id: string) {
     setCancelling(id)
     try {
-      const res = await fetch(`/api/bookings/${id}`, { method: 'DELETE' })
-      if (res.status === 401) { router.push('/admin/login'); return }
+      const res = await fetch(`/api/customer/bookings/${id}`, { method: 'DELETE' })
+      if (res.status === 401) { router.push('/login'); return }
       if (res.ok) {
         setBookings((prev) =>
           prev.map((b) => (b.id === id ? { ...b, status: 'cancelled' } : b))
@@ -293,7 +296,7 @@ export default function AdminDashboardPage() {
     setDeleting(id)
     try {
       const res = await fetch(`/api/admin/bookings/${id}`, { method: 'DELETE' })
-      if (res.status === 401) { router.push('/admin/login'); return }
+      if (res.status === 401) { router.push('/login'); return }
       if (res.ok) setBookings((prev) => prev.filter((b) => b.id !== id))
     } finally {
       setDeleting(null)
@@ -303,7 +306,7 @@ export default function AdminDashboardPage() {
 
   async function handleLogout() {
     await fetch('/api/admin/logout', { method: 'POST' })
-    router.push('/admin/login')
+    router.push('/login')
   }
 
   async function handleSavePanel() {
@@ -315,7 +318,7 @@ export default function AdminDashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: selectedOverrideDate, ...editValues }),
       })
-      if (res.status === 401) { router.push('/admin/login'); return }
+      if (res.status === 401) { router.push('/login'); return }
       if (res.ok) {
         setOverrides((prev) => ({ ...prev, [selectedOverrideDate]: { ...editValues } }))
         setPanelSaved(true)
@@ -331,7 +334,7 @@ export default function AdminDashboardPage() {
     setPanelSaving(true)
     try {
       const res = await fetch(`/api/admin/date-overrides?date=${selectedOverrideDate}`, { method: 'DELETE' })
-      if (res.status === 401) { router.push('/admin/login'); return }
+      if (res.status === 401) { router.push('/login'); return }
       if (res.ok) {
         setOverrides((prev) => {
           const next = { ...prev }
@@ -353,7 +356,7 @@ export default function AdminDashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reset: true }),
       })
-      if (res.status === 401) { router.push('/admin/login'); return }
+      if (res.status === 401) { router.push('/login'); return }
       if (!res.ok) {
         const d = await res.json()
         setResetError(d.error ?? 'Failed to reset')
@@ -370,6 +373,7 @@ export default function AdminDashboardPage() {
     }
   }
 
+  // Returns whether a date has a manual override and whether it's marked closed (used to colour the dots)
   function getEffectiveHours(dateStr: string): { hasOverride: boolean; isClosed: boolean } {
     const override = overrides[dateStr]
     if (override) return { hasOverride: true, isClosed: override.is_closed }
@@ -388,7 +392,7 @@ export default function AdminDashboardPage() {
           </div>
           <div className="flex items-center gap-2">
             <Link
-              href="/admin/settings"
+              href="/settings"
               className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400 transition-colors"
               aria-label="Settings"
             >
