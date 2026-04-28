@@ -115,17 +115,18 @@ export default function AdminSettingsPage() {
   return (
     <PageLayout>
       {/* Header */}
-      <div className="px-4 pt-6 pb-2">
-        <div className="flex items-center gap-3">
+      <div className="px-5 pt-8 pb-6">
+        <div className="h-8 flex items-center mb-1.5">
           <Link
             href="/dashboard"
-            className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400 transition-colors"
+            className="flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-600 transition-colors"
             aria-label="Back to dashboard"
           >
             <Icon name="chevron-left" className="w-4 h-4" />
+            Back
           </Link>
-          <h1 className="text-2xl font-bold text-zinc-900">Settings</h1>
         </div>
+        <h1 className="text-[1.6rem] font-bold text-zinc-900 leading-tight">Settings</h1>
       </div>
 
       <div className="border-t border-zinc-200 sm:border-t-0 flex flex-col sm:gap-3 pb-8">

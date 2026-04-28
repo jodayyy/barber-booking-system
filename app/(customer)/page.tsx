@@ -210,7 +210,9 @@ function BookingPage() {
   return (
     <PageLayout>
       <div className="px-5 pt-8 pb-6">
-        <p className="text-zinc-400 text-sm mb-1.5">{todayLabel}</p>
+        <div className="h-8 flex items-center mb-1.5">
+          <p className="text-zinc-400 text-sm">{todayLabel}</p>
+        </div>
         <h1 className="text-[1.6rem] font-bold text-zinc-900 leading-tight mb-3">
           {shopName ? `Welcome to ${shopName}` : 'Welcome'}
         </h1>

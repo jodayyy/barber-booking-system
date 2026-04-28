@@ -16,7 +16,7 @@ import { Icon } from '@/components/Icon'
 
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-function readAdminCache(): { shopName: string; bookingWindow: number } | null {
+function readAdminCache(): { shopName: string; bookingWindow: number; isOpen: boolean | null; hoursLabel: string | null } | null {
   try {
     const raw = localStorage.getItem('admin_cache')
     return raw ? JSON.parse(raw) : null
@@ -120,7 +120,11 @@ function AdminDashboardPage() {
 
   const [shopName, setShopName] = useState(() => readAdminCache()?.shopName ?? '')
   const [bookingWindow, setBookingWindow] = useState(() => readAdminCache()?.bookingWindow ?? 14)
+  const [isOpen, setIsOpen] = useState<boolean | null>(() => readAdminCache()?.isOpen ?? null)
+  const [hoursLabel, setHoursLabel] = useState<string | null>(() => readAdminCache()?.hoursLabel ?? null)
   const [dayCounts, setDayCounts] = useState<Record<string, number>>({})
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement | null>(null)
 
   const allDates = getDaysFrom(today, bookingWindow)
 
@@ -194,6 +198,17 @@ function AdminDashboardPage() {
     return () => el.removeEventListener('scroll', updateScrollButtons)
   }, [scrollMounted])
 
+  useEffect(() => {
+    if (!dropdownOpen) return
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [dropdownOpen])
+
   // Loads schedule, date overrides, shop settings, and booking window in parallel on mount
   const loadSettings = useCallback(async () => {
     const [scheduleRes, overridesRes, settingsRes, statusRes] = await Promise.all([
@@ -206,6 +221,8 @@ function AdminDashboardPage() {
     if (scheduleRes.ok) setSchedule(await scheduleRes.json())
     let newShopName = ''
     let newBookingWindow = 14
+    let newIsOpen: boolean | null = null
+    let newHoursLabel: string | null = null
     if (settingsRes.ok) {
       const s = await settingsRes.json()
       if (s.shop_name) { setShopName(s.shop_name); newShopName = s.shop_name }
@@ -214,9 +231,19 @@ function AdminDashboardPage() {
       const s = await statusRes.json()
       newBookingWindow = s.bookingWindow ?? 14
       setBookingWindow(newBookingWindow)
+      newIsOpen = s.open
+      setIsOpen(s.open)
+      const fmt = (t: string) => {
+        const [h, m] = t.slice(0, 5).split(':').map(Number)
+        const suffix = h >= 12 ? 'PM' : 'AM'
+        const hour = h % 12 || 12
+        return m === 0 ? `${hour} ${suffix}` : `${hour}:${String(m).padStart(2, '0')} ${suffix}`
+      }
+      newHoursLabel = s.hours ? `${fmt(s.hours.start)} – ${fmt(s.hours.end)}` : null
+      setHoursLabel(newHoursLabel)
     }
     try {
-      localStorage.setItem('admin_cache', JSON.stringify({ shopName: newShopName, bookingWindow: newBookingWindow }))
+      localStorage.setItem('admin_cache', JSON.stringify({ shopName: newShopName, bookingWindow: newBookingWindow, isOpen: newIsOpen, hoursLabel: newHoursLabel }))
     } catch {}
     if (overridesRes.ok) {
       const d: Array<{ date: string } & DateOverride> = await overridesRes.json()
@@ -387,6 +414,14 @@ function AdminDashboardPage() {
     }
   }
 
+  const todayLabel = (() => {
+    const d = new Date()
+    const wd = d.toLocaleDateString('en-GB', { weekday: 'long' })
+    const day = d.getDate()
+    const mo = d.toLocaleDateString('en-GB', { month: 'long' })
+    return `${wd}, ${day} ${mo}`
+  })()
+
   // Returns whether a date has a manual override and whether it's marked closed (used to colour the dots)
   function getEffectiveHours(dateStr: string): { hasOverride: boolean; isClosed: boolean } {
     const override = overrides[dateStr]
@@ -399,28 +434,52 @@ function AdminDashboardPage() {
   return (
     <PageLayout>
       {/* Header */}
-      <div className="px-4 pt-6 pb-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-zinc-900">{shopName ? `${shopName} Dashboard` : 'Dashboard'}</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/settings"
-              className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400 transition-colors"
-              aria-label="Settings"
-            >
-              <Icon name="settings" className="w-4 h-4" />
-            </Link>
+      <div className="px-5 pt-8 pb-6">
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-zinc-400 text-sm">{todayLabel}</p>
+          <div className="relative" ref={dropdownRef}>
             <button
-              onClick={handleLogout}
-              className="w-9 h-9 flex items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400 transition-colors cursor-pointer"
-              aria-label="Logout"
+              onClick={() => setDropdownOpen((v) => !v)}
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-600 hover:text-zinc-900 transition-colors cursor-pointer"
+              aria-label="Menu"
             >
-              <Icon name="logout" className="w-4 h-4" />
+              <Icon name="more-vertical" className="w-4 h-4" />
             </button>
+            {dropdownOpen && (
+              <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-zinc-200 rounded-xl shadow-lg overflow-hidden z-50">
+                <Link
+                  href="/settings"
+                  onClick={() => setDropdownOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+                >
+                  <Icon name="settings" className="w-4 h-4" />
+                  Settings
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  <Icon name="logout" className="w-4 h-4" />
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         </div>
+        <h1 className="text-[1.6rem] font-bold text-zinc-900 leading-tight mb-3">
+          {shopName ? `${shopName} Dashboard` : 'Dashboard'}
+        </h1>
+        {isOpen === null ? (
+          <div className="h-5 flex items-center"><Spinner /></div>
+        ) : (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`w-2 h-2 rounded-full shrink-0 ${isOpen ? 'bg-green-400' : 'bg-red-400'}`} />
+            <span className={`text-sm font-semibold ${isOpen ? 'text-green-400' : 'text-red-400'}`}>
+              {isOpen ? 'Open' : 'Closed'}
+            </span>
+            {hoursLabel && <span className="text-sm text-zinc-400">· {hoursLabel}</span>}
+          </div>
+        )}
       </div>
 
       <div className="border-t border-zinc-200 sm:border-t-0 flex flex-col sm:gap-4 pb-8">

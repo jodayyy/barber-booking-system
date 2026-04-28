@@ -96,15 +96,23 @@ export default function BookingPage() {
 
   return (
     <PageLayout>
-      <div className="px-4 pt-6">
-        <button
-          onClick={() => router.push('/')}
-          className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-800 mb-6 cursor-pointer"
-        >
-          <Icon name="chevron-left" className="w-4 h-4" />
-          Back
-        </button>
+      {/* Header */}
+      <div className="px-5 pt-8 pb-6">
+        <div className="h-8 flex items-center mb-1.5">
+          <button
+            onClick={() => router.push('/')}
+            className="flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"
+          >
+            <Icon name="chevron-left" className="w-4 h-4" />
+            Back
+          </button>
+        </div>
+        <h1 className="text-[1.6rem] font-bold text-zinc-900 leading-tight mb-3">
+          Booking Confirmation
+        </h1>
+      </div>
 
+      <div className="border-t border-zinc-200 sm:border-t-0 pb-8">
         {loading && (
           <div className="flex justify-center py-16">
             <Spinner />
@@ -112,7 +120,7 @@ export default function BookingPage() {
         )}
 
         {!loading && (notFound || !booking) && (
-          <div className="text-center pt-16">
+          <div className="px-5 text-center pt-16">
             <p className="text-zinc-900 font-semibold text-lg mb-1">Booking not found</p>
             <p className="text-zinc-500 text-sm mb-6">This link may be invalid or expired.</p>
             <a href="/" className="text-sm text-zinc-600 underline underline-offset-2">
@@ -120,39 +128,37 @@ export default function BookingPage() {
             </a>
           </div>
         )}
-      </div>
 
-      {!loading && booking && (
-        <>
-          {/* Status indicator */}
-          <div className="px-4 flex flex-col items-center text-center mb-8">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${cancelled ? 'bg-zinc-200' : 'bg-zinc-900'}`}>
-              {cancelled ? (
-                <Icon name="x" className="w-8 h-8 text-zinc-400" />
-              ) : (
-                <Icon name="check" className="w-8 h-8 text-white" />
-              )}
+        {!loading && booking && (
+          <>
+            <div className="px-5 pt-6 flex flex-col items-center text-center mb-8">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${cancelled ? 'bg-zinc-200' : 'bg-zinc-900'}`}>
+                {cancelled ? (
+                  <Icon name="x" className="w-8 h-8 text-zinc-400" />
+                ) : (
+                  <Icon name="check" className="w-8 h-8 text-white" />
+                )}
+              </div>
+              <p className="text-lg font-bold text-zinc-900">
+                {cancelled ? 'Appointment cancelled' : "You're booked!"}
+              </p>
+              <p className="text-zinc-500 text-sm mt-1">
+                {cancelled ? 'This appointment has been cancelled.' : 'See you soon.'}
+              </p>
             </div>
-            <h1 className="text-2xl font-bold text-zinc-900">
-              {cancelled ? 'Appointment cancelled' : "You're booked!"}
-            </h1>
-            <p className="text-zinc-500 text-sm mt-1">
-              {cancelled ? 'This appointment has been cancelled.' : 'See you soon.'}
-            </p>
-          </div>
 
-          <div className="bg-white border-y border-zinc-200 sm:border sm:rounded-2xl sm:mx-4 divide-y divide-zinc-100 mb-0">
-            <BookingDetailRow label="Name" value={booking.name} />
-            <BookingDetailRow label="Date" value={formatDate(booking.date)} />
-            <BookingDetailRow label="Time" value={formatSlot(booking.slot)} />
-            <BookingDetailRow
-              label="Status"
-              value={cancelled ? 'Cancelled' : 'Confirmed'}
-              valueClassName={`text-sm font-medium ${cancelled ? 'text-red-500' : 'text-green-600'}`}
-            />
-          </div>
+            <div className="bg-white border-y border-zinc-200 sm:border sm:rounded-2xl sm:mx-4 divide-y divide-zinc-100">
+              <BookingDetailRow label="Name" value={booking.name} />
+              <BookingDetailRow label="Date" value={formatDate(booking.date)} />
+              <BookingDetailRow label="Time" value={formatSlot(booking.slot)} />
+              <BookingDetailRow
+                label="Status"
+                value={cancelled ? 'Cancelled' : 'Confirmed'}
+                valueClassName={`text-sm font-medium ${cancelled ? 'text-red-500' : 'text-green-600'}`}
+              />
+            </div>
 
-          <div className="px-4 pt-5 pb-8 flex flex-col gap-3">
+            <div className="px-5 pt-5 pb-8 flex flex-col gap-3">
             {!cancelled && (
               <>
                 <a
@@ -197,6 +203,7 @@ export default function BookingPage() {
           </div>
         </>
       )}
+      </div>
     </PageLayout>
   )
 }
