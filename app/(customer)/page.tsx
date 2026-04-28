@@ -120,6 +120,12 @@ function BookingPage() {
   const [bookedSlots, setBookedSlots] = useState<string[]>([])
   const [selectedSlot, setSelectedSlot] = useState('')
   const [bookedSlotClicked, setBookedSlotClicked] = useState('')
+  const detailsRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (!selectedSlot) return
+    setTimeout(() => detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50)
+  }, [selectedSlot])
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -173,12 +179,12 @@ function BookingPage() {
       const data = await res.json()
       if (!res.ok) {
         setSubmitError(data.error ?? 'Something went wrong. Please try again.')
+        setSubmitting(false)
         return
       }
       router.push(`/booking/${data.id}`)
     } catch {
       setSubmitError('Something went wrong. Please try again.')
-    } finally {
       setSubmitting(false)
     }
   }
@@ -335,7 +341,7 @@ function BookingPage() {
 
           {/* Booking form */}
           {selectedSlot && (
-            <section>
+            <section ref={detailsRef}>
               <SectionLabel>Your details</SectionLabel>
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <FormField
@@ -352,7 +358,7 @@ function BookingPage() {
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="01X-XXX XXXX"
+                  placeholder="01XXXXXXXXX"
                   required
                   maxLength={20}
                 />
@@ -375,7 +381,7 @@ function BookingPage() {
               type="tel"
               value={managePhone}
               onChange={(e) => setManagePhone(e.target.value)}
-              placeholder="01X-XXX XXXX"
+              placeholder="01XXXXXXXXX"
               maxLength={20}
               className="flex-1 px-4 py-3 rounded-xl border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-500 bg-white text-sm"
             />

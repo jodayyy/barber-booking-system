@@ -65,6 +65,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid slot' }, { status: 400 })
   }
 
+  // Enforce 1 active booking per phone number
+  const { data: existingByPhone, error: phoneCheckError } = await supabaseAdmin
+    .from('bookings')
+    .select('id')
+    .eq('phone', phone.trim())
+    .eq('status', 'active')
+    .limit(1)
+    .maybeSingle()
+
+  if (phoneCheckError) {
+    return NextResponse.json({ error: 'Failed to check existing bookings' }, { status: 500 })
+  }
+
+  if (existingByPhone) {
+    return NextResponse.json({ error: 'You already have an active booking. Please cancel it before making a new one.' }, { status: 409 })
+  }
+
   // Check for a race condition — another customer may have booked the same slot just now
   const { data: existing, error: existingError } = await supabaseAdmin
     .from('bookings')

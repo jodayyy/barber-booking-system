@@ -326,6 +326,7 @@ function AdminDashboardPage() {
         setBookings((prev) =>
           prev.map((b) => (b.id === id ? { ...b, status: 'cancelled' } : b))
         )
+        setDayCounts((prev) => ({ ...prev, [selectedDate]: Math.max(0, (prev[selectedDate] ?? 0) - 1) }))
       }
     } finally {
       setCancelling(null)
@@ -338,7 +339,10 @@ function AdminDashboardPage() {
     try {
       const res = await fetch(`/api/admin/bookings/${id}`, { method: 'DELETE' })
       if (res.status === 401) { router.push('/login'); return }
-      if (res.ok) setBookings((prev) => prev.filter((b) => b.id !== id))
+      if (res.ok) {
+        setBookings((prev) => prev.filter((b) => b.id !== id))
+        setDayCounts((prev) => ({ ...prev, [selectedDate]: Math.max(0, (prev[selectedDate] ?? 0) - 1) }))
+      }
     } finally {
       setDeleting(null)
       setConfirmId(null)
