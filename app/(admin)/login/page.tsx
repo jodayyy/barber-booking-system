@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { PageLayout } from '@/components/PageLayout'
 import { PageHeader } from '@/components/PageHeader'
 import { FormField } from '@/components/FormField'
@@ -102,6 +103,12 @@ export default function AdminLoginPage() {
           {loading ? 'Signing in…' : 'Sign In'}
         </Button>
       </form>
+
+      <Link href="/" className="mt-3 block">
+        <Button variant="secondary" className="w-full">
+          Back to booking page
+        </Button>
+      </Link>
     </PageLayout>
   )
 }

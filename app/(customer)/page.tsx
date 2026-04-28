@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { getLocalDateString, formatSlot } from '@/lib/utils'
 import { PageLayout } from '@/components/PageLayout'
 import { Collapsible } from '@/components/Collapsible'
@@ -25,9 +26,19 @@ function generateDateRange(days: number): { dateStr: string; label: string; dayN
   })
 }
 
-export default function BookingPage() {
+// Reads the last-known shop status from localStorage so the header renders instantly on refresh
+function readStatusCache(): { open: boolean; shopName: string | null; shopPhone: string | null; hoursLabel: string | null; bookingWindow: number } | null {
+  try {
+    const raw = localStorage.getItem('shop_status')
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+
+function BookingPage() {
   const router = useRouter()
-  const [dates, setDates] = useState<{ dateStr: string; label: string; dayName: string }[]>([])
+  const [dates, setDates] = useState<{ dateStr: string; label: string; dayName: string }[]>(
+    () => generateDateRange(readStatusCache()?.bookingWindow ?? 14)
+  )
   const dateScrollRef = useRef<HTMLDivElement | null>(null)
   const [scrollMounted, setScrollMounted] = useState(false)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
@@ -53,29 +64,40 @@ export default function BookingPage() {
     return () => el.removeEventListener('scroll', updateScrollButtons)
   }, [scrollMounted, dates])
 
-  const [isOpen, setIsOpen] = useState<boolean | null>(null)
-  const [hoursLabel, setHoursLabel] = useState<string | null>(null)
-  const [shopName, setShopName] = useState<string | null>(null)
-  const [shopPhone, setShopPhone] = useState<string | null>(null)
+  const [isOpen, setIsOpen] = useState<boolean | null>(() => readStatusCache()?.open ?? null)
+  const [hoursLabel, setHoursLabel] = useState<string | null>(() => readStatusCache()?.hoursLabel ?? null)
+  const [shopName, setShopName] = useState<string | null>(() => readStatusCache()?.shopName ?? null)
+  const [shopPhone, setShopPhone] = useState<string | null>(() => readStatusCache()?.shopPhone ?? null)
 
-  // On mount: fetch shop open/closed status, booking window length, and shop contact info
+  // On mount: fetch fresh shop status in background and update cache if anything changed
   useEffect(() => {
     fetch('/api/customer/status')
       .then((r) => r.json())
       .then((d) => {
+        const fmt = (t: string) => {
+          const [h, m] = t.slice(0, 5).split(':').map(Number)
+          const suffix = h >= 12 ? 'PM' : 'AM'
+          const hour = h % 12 || 12
+          return m === 0 ? `${hour} ${suffix}` : `${hour}:${String(m).padStart(2, '0')} ${suffix}`
+        }
+        const hl = d.hours ? `${fmt(d.hours.start)} – ${fmt(d.hours.end)}` : null
+        const bookingWindow = d.bookingWindow ?? 14
+
         setIsOpen(d.open)
-        setDates(generateDateRange(d.bookingWindow ?? 14))
+        setDates(generateDateRange(bookingWindow))
         setShopName(d.shopName ?? null)
         setShopPhone(d.shopPhone ?? null)
-        if (d.hours) {
-          const fmt = (t: string) => {
-            const [h, m] = t.slice(0, 5).split(':').map(Number)
-            const suffix = h >= 12 ? 'PM' : 'AM'
-            const hour = h % 12 || 12
-            return m === 0 ? `${hour} ${suffix}` : `${hour}:${String(m).padStart(2, '0')} ${suffix}`
-          }
-          setHoursLabel(`${fmt(d.hours.start)} – ${fmt(d.hours.end)}`)
-        }
+        setHoursLabel(hl)
+
+        try {
+          localStorage.setItem('shop_status', JSON.stringify({
+            open: d.open,
+            shopName: d.shopName ?? null,
+            shopPhone: d.shopPhone ?? null,
+            hoursLabel: hl,
+            bookingWindow,
+          }))
+        } catch {}
       })
       .catch(() => {})
   }, [])
@@ -381,17 +403,15 @@ export default function BookingPage() {
             <Icon name="whatsapp" className="w-5 h-5" />
           </a>
         )}
-        {process.env.NEXT_PUBLIC_SHOP_COORDINATES && (
-          <a
-            href={`https://maps.google.com/maps?q=${process.env.NEXT_PUBLIC_SHOP_COORDINATES}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-12 h-12 flex items-center justify-center rounded-full bg-zinc-900 text-white shadow-lg hover:bg-zinc-700 transition-colors"
-            aria-label="View shop location"
-          >
-            <Icon name="map-pin" className="w-5 h-5" />
-          </a>
-        )}
+        <a
+          href="https://maps.app.goo.gl/EvuqEoACapokfbts5"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-12 h-12 flex items-center justify-center rounded-full bg-zinc-900 text-white shadow-lg hover:bg-zinc-700 transition-colors"
+          aria-label="View shop location"
+        >
+          <Icon name="map-pin" className="w-5 h-5" />
+        </a>
         <a
           href="/dashboard"
           className="w-12 h-12 flex items-center justify-center rounded-full bg-zinc-200 text-zinc-500 shadow-sm hover:bg-zinc-300 transition-colors"
@@ -403,3 +423,5 @@ export default function BookingPage() {
     </PageLayout>
   )
 }
+
+export default dynamic(() => Promise.resolve({ default: BookingPage }), { ssr: false })

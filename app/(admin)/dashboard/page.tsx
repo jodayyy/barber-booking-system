@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { getLocalDateString, formatSlot, formatDateHeading } from '@/lib/utils'
 import { PageLayout } from '@/components/PageLayout'
 import { Card } from '@/components/Card'
@@ -14,6 +15,13 @@ import { TimePicker } from '@/components/TimePicker'
 import { Icon } from '@/components/Icon'
 
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+function readAdminCache(): { shopName: string; bookingWindow: number } | null {
+  try {
+    const raw = localStorage.getItem('admin_cache')
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
 
 type Booking = {
   id: string
@@ -79,7 +87,7 @@ function getDaysFrom(startStr: string, n: number): { dateStr: string; dayNum: st
   })
 }
 
-export default function AdminDashboardPage() {
+function AdminDashboardPage() {
   const router = useRouter()
 
   // — Bookings —
@@ -110,8 +118,8 @@ export default function AdminDashboardPage() {
   const [resetError, setResetError] = useState('')
   const [resetDone, setResetDone] = useState(false)
 
-  const [shopName, setShopName] = useState('')
-  const [bookingWindow, setBookingWindow] = useState(14)
+  const [shopName, setShopName] = useState(() => readAdminCache()?.shopName ?? '')
+  const [bookingWindow, setBookingWindow] = useState(() => readAdminCache()?.bookingWindow ?? 14)
   const [dayCounts, setDayCounts] = useState<Record<string, number>>({})
 
   const allDates = getDaysFrom(today, bookingWindow)
@@ -196,14 +204,20 @@ export default function AdminDashboardPage() {
     ])
     if (scheduleRes.status === 401) { router.push('/login'); return }
     if (scheduleRes.ok) setSchedule(await scheduleRes.json())
+    let newShopName = ''
+    let newBookingWindow = 14
     if (settingsRes.ok) {
       const s = await settingsRes.json()
-      if (s.shop_name) setShopName(s.shop_name)
+      if (s.shop_name) { setShopName(s.shop_name); newShopName = s.shop_name }
     }
     if (statusRes.ok) {
       const s = await statusRes.json()
-      setBookingWindow(s.bookingWindow ?? 14)
+      newBookingWindow = s.bookingWindow ?? 14
+      setBookingWindow(newBookingWindow)
     }
+    try {
+      localStorage.setItem('admin_cache', JSON.stringify({ shopName: newShopName, bookingWindow: newBookingWindow }))
+    } catch {}
     if (overridesRes.ok) {
       const d: Array<{ date: string } & DateOverride> = await overridesRes.json()
       const map: Record<string, DateOverride> = {}
@@ -775,3 +789,5 @@ export default function AdminDashboardPage() {
     </PageLayout>
   )
 }
+
+export default dynamic(() => Promise.resolve({ default: AdminDashboardPage }), { ssr: false })

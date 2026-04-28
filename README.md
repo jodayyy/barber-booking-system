@@ -76,7 +76,6 @@ Copy `.env.example` to `.env.local` and fill in the values:
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (server-side only) |
 | `SESSION_SECRET` | Yes | 32-byte hex secret for HMAC session signing — `openssl rand -hex 32` |
 | `CRON_SECRET` | Yes | Bearer token Vercel sends to cron endpoints — `openssl rand -hex 32` |
-| `NEXT_PUBLIC_SHOP_COORDINATES` | No | `lat,lng` — enables map button on booking page |
 
 ## Getting Started
 
