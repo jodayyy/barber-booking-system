@@ -215,7 +215,7 @@ function BookingPage() {
 
   return (
     <PageLayout>
-      <div className="px-5 pt-8 pb-6">
+      <div className="px-5 pt-5 pb-4">
         <div className="h-8 flex items-center mb-1.5">
           <p className="text-zinc-400 text-sm">{todayLabel}</p>
         </div>
@@ -235,7 +235,7 @@ function BookingPage() {
         )}
       </div>
 
-      <div className="border-t border-zinc-200 sm:border-t-0 flex flex-col sm:gap-3 pb-24">
+      <div className="border-t border-zinc-200 sm:border-t-0 flex flex-col sm:gap-3 pb-4">
       <Collapsible label="Book an Appointment">
         <div className="flex flex-col gap-8">
           {/* Date strip */}

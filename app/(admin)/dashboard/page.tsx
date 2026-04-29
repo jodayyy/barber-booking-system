@@ -438,7 +438,7 @@ function AdminDashboardPage() {
   return (
     <PageLayout>
       {/* Header */}
-      <div className="px-5 pt-8 pb-6">
+      <div className="px-5 pt-5 pb-4">
         <div className="flex items-center justify-between mb-1.5">
           <p className="text-zinc-400 text-sm">{todayLabel}</p>
           <div className="relative" ref={dropdownRef}>
