@@ -34,7 +34,7 @@ export function Collapsible({ label, children, defaultOpen = false, className = 
         className="grid transition-[grid-template-rows] duration-300 ease-in-out"
         style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
       >
-        <div className="overflow-hidden">
+        <div className="overflow-hidden min-h-0">
           <div className="border-t border-zinc-100 px-4 pt-5 pb-5">
             {children}
           </div>
